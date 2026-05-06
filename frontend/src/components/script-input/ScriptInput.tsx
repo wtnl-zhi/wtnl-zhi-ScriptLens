@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { Sparkles, Loader2 } from "lucide-react";
 import UploadDropzone from "@/components/upload-dropzone/UploadDropzone";
+import { api } from "@/lib/api";
 
 interface Props {
   value: string;
@@ -11,6 +13,7 @@ interface Props {
 
 export default function ScriptInput({ value, onChange, onUpload }: Props) {
   const [showUpload, setShowUpload] = useState(false);
+  const [cleaning, setCleaning] = useState(false);
 
   const handleUploadComplete = (text: string) => {
     onChange(text);
@@ -18,11 +21,39 @@ export default function ScriptInput({ value, onChange, onUpload }: Props) {
     setShowUpload(false);
   };
 
+  const handleClean = async () => {
+    if (!value.trim()) return;
+    setCleaning(true);
+    try {
+      const result = await api.cleanScript(value);
+      onChange(result.cleaned_text);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "清洗失败");
+    } finally {
+      setCleaning(false);
+    }
+  };
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <label className="text-sm font-medium">脚本内容</label>
         <div className="flex items-center gap-2">
+          {value.trim() && (
+            <button
+              type="button"
+              onClick={handleClean}
+              disabled={cleaning}
+              className="flex items-center gap-1 rounded-md bg-secondary px-3 py-1.5 text-xs text-secondary-foreground hover:bg-secondary/80 disabled:opacity-50 transition-colors"
+            >
+              {cleaning ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Sparkles className="h-3 w-3" />
+              )}
+              {cleaning ? "清洗中..." : "智能清洗"}
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setShowUpload(!showUpload)}

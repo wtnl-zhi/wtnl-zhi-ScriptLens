@@ -18,6 +18,7 @@ from app.schemas.storyboard import (
 )
 from app.services.encryption import decrypt_value
 from app.services.task_manager import create_task, get_task
+from app.services.deepseek import clean_script
 from app.core.config import settings
 from app.api.auth import get_current_user
 
@@ -53,6 +54,29 @@ async def generate(
         api_key=api_key,
     )
     return {"task_id": task_id}
+
+
+@router.post("/clean")
+async def clean(
+    body: dict,
+    current_user: User = Depends(get_current_user),
+):
+    text = body.get("text", "")
+    if not text.strip():
+        raise HTTPException(status_code=400, detail="No text provided")
+
+    api_key = None
+    if current_user.encrypted_deepseek_key:
+        try:
+            api_key = decrypt_value(current_user.encrypted_deepseek_key, settings.ENCRYPTION_KEY)
+        except Exception:
+            pass
+
+    if not api_key:
+        raise HTTPException(status_code=400, detail="请在设置页配置 DeepSeek API Key 后使用智能清洗")
+
+    cleaned = clean_script(text, api_key)
+    return {"cleaned_text": cleaned}
 
 
 @router.get("/status/{task_id}")

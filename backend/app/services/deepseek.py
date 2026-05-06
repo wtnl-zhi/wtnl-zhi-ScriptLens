@@ -47,6 +47,32 @@ MODEL_MAP = {
 }
 
 
+def _load_clean_prompt() -> tuple[str, str]:
+    prompt_dir = Path(__file__).parent.parent / "prompts"
+    path = prompt_dir / "scripts_clean.json"
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    return data["system_prompt"], data["user_template"]
+
+
+def clean_script(script_text: str, api_key: str) -> str:
+    """Clean raw script text using DeepSeek."""
+    from openai import OpenAI
+
+    system_prompt, user_template = _load_clean_prompt()
+    user_message = user_template.replace("{content}", script_text)
+
+    client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com")
+    response = client.chat.completions.create(
+        model="deepseek-chat",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_message},
+        ],
+    )
+    return (response.choices[0].message.content or script_text).strip()
+
+
 def _load_prompt() -> tuple[str, str]:
     prompt_dir = Path(__file__).parent.parent / "prompts"
     path = prompt_dir / "storyboard_split.json"

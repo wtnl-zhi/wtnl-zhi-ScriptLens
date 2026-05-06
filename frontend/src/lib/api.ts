@@ -145,6 +145,12 @@ export function deleteProject(id: string): Promise<void> {
 
 // ---- Storyboard ----
 
+export function cleanScript(
+  text: string
+): Promise<{ cleaned_text: string }> {
+  return request("POST", "/api/storyboard/clean", { text });
+}
+
 export function generateStoryboard(
   projectId: string,
   model?: string
@@ -255,6 +261,7 @@ export const api = {
   getProject,
   updateProject,
   deleteProject,
+  cleanScript,
   generateStoryboard,
   getTaskStatus,
   getTaskResults,
