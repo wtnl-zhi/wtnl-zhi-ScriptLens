@@ -197,11 +197,12 @@ function SortableRow({
               <img
                 src={row.reference_image_url.startsWith("http") ? row.reference_image_url : `${API_BASE}${row.reference_image_url}`}
                 alt="参考图"
-                className="h-10 w-10 rounded object-cover"
+                className="h-16 w-16 cursor-pointer rounded object-cover"
+                onClick={() => window.open(row.reference_image_url.startsWith("http") ? row.reference_image_url : `${API_BASE}${row.reference_image_url}`, "_blank")}
               />
               <button
                 onClick={handleRemoveImage}
-                className="absolute -right-1 -top-1 hidden rounded-full bg-destructive p-0.5 text-destructive-foreground group-hover:block"
+                className="absolute -right-1.5 -top-1.5 hidden rounded-full bg-destructive p-0.5 text-destructive-foreground group-hover:block"
               >
                 <X className="h-3 w-3" />
               </button>
