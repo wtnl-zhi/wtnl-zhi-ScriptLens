@@ -18,6 +18,7 @@ class StoryboardShot(Base):
     content: Mapped[str | None] = mapped_column(Text, nullable=True)
     atmosphere: Mapped[str | None] = mapped_column(String(200), nullable=True)
     ai_prompt: Mapped[str | None] = mapped_column(Text, nullable=True)
+    script_reference: Mapped[str | None] = mapped_column(Text, nullable=True)
     reference_image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     sort_order: Mapped[int] = mapped_column(Integer, default=0)

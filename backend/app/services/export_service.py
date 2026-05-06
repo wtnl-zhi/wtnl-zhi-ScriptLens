@@ -15,7 +15,7 @@ def export_excel(project, shots) -> str:
     ws = wb.active
     ws.title = "分镜表"
 
-    headers = ["镜头号", "镜头类型", "时长(秒)", "画面描述", "氛围", "AI提示词", "备注"]
+    headers = ["镜头号", "镜头类型", "时长(秒)", "画面描述", "氛围", "对应脚本", "AI提示词", "备注"]
     header_font = Font(bold=True, color="FFFFFF")
     header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
 
@@ -30,8 +30,9 @@ def export_excel(project, shots) -> str:
         ws.cell(row=row_idx, column=3, value=shot.duration_sec or "")
         ws.cell(row=row_idx, column=4, value=shot.content or "")
         ws.cell(row=row_idx, column=5, value=shot.atmosphere or "")
-        ws.cell(row=row_idx, column=6, value=shot.ai_prompt or "")
-        ws.cell(row=row_idx, column=7, value=shot.notes or "")
+        ws.cell(row=row_idx, column=6, value=shot.script_reference or "")
+        ws.cell(row=row_idx, column=7, value=shot.ai_prompt or "")
+        ws.cell(row=row_idx, column=8, value=shot.notes or "")
 
     for col in range(1, len(headers) + 1):
         ws.column_dimensions[chr(64 + col)].width = 25
@@ -45,7 +46,7 @@ def export_csv(project, shots) -> str:
     filepath = os.path.join(settings.UPLOAD_DIR, f"export_{project.id}.csv")
     with open(filepath, "w", newline="", encoding="utf-8-sig") as f:
         writer = csv.writer(f)
-        writer.writerow(["镜头号", "镜头类型", "时长(秒)", "画面描述", "氛围", "AI提示词", "备注"])
+        writer.writerow(["镜头号", "镜头类型", "时长(秒)", "画面描述", "氛围", "对应脚本", "AI提示词", "备注"])
         for shot in shots:
             writer.writerow([
                 shot.shot_number,
@@ -53,6 +54,7 @@ def export_csv(project, shots) -> str:
                 shot.duration_sec or "",
                 shot.content or "",
                 shot.atmosphere or "",
+                shot.script_reference or "",
                 shot.ai_prompt or "",
                 shot.notes or "",
             ])

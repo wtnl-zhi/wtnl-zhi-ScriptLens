@@ -146,9 +146,10 @@ def _generate_mock_from_script(script_text: str) -> list[dict]:
             "shot_number": i + 1,
             "shot_type": shot_types[i % len(shot_types)],
             "duration_sec": 3.0 + (i % 3) * 0.5,
-            "content": part,
+            "content": f"{part}",
             "atmosphere": "日常" if i % 2 == 0 else "紧张",
             "ai_prompt": f"{part}，电影级布光，写实风格，4K画质，自然色调",
+            "script_reference": part,
         })
     return modified
 

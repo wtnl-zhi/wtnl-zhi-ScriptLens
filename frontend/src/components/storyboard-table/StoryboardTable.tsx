@@ -71,6 +71,7 @@ function SortableRow({
       content: "content",
       atmosphere: "atmosphere",
       ai_prompt: "ai_prompt",
+      script_reference: "script_reference",
     };
     const modelField = fieldMap[field] || field;
     const currentVal = String((row as unknown as Record<string, unknown>)[modelField] ?? "");
@@ -111,7 +112,7 @@ function SortableRow({
   };
 
   const isLongText = (field: string) =>
-    ["content", "ai_prompt", "atmosphere"].includes(field);
+    ["content", "ai_prompt", "atmosphere", "script_reference"].includes(field);
 
   const renderCell = (field: string, value: string | number | null, className = "") => {
     const cellKey = `${row.id}-${field}`;
@@ -183,6 +184,7 @@ function SortableRow({
       <td className="px-2 py-2">{renderCell("duration_sec", row.duration_sec, "text-center")}</td>
       <td className="min-w-[160px] px-2 py-2">{renderCell("content", row.content)}</td>
       <td className="min-w-[120px] px-2 py-2">{renderCell("atmosphere", row.atmosphere)}</td>
+      <td className="min-w-[120px] px-2 py-2">{renderCell("script_reference", row.script_reference)}</td>
       <td className="min-w-[160px] px-2 py-2">{renderCell("ai_prompt", row.ai_prompt)}</td>
       <td className="px-2 py-2">
         <div className="flex items-center justify-center">
@@ -276,6 +278,7 @@ export default function StoryboardTable({
               <th className="w-16 px-2 py-2 text-center">时长(s)</th>
               <th className="px-2 py-2 text-left">画面内容</th>
               <th className="px-2 py-2 text-left">场景氛围</th>
+              <th className="px-2 py-2 text-left">对应脚本</th>
               <th className="px-2 py-2 text-left">AI生图提示词</th>
               <th className="w-16 px-2 py-2 text-center">参考图</th>
               <th className="w-10 px-2 py-2 text-center">操作</th>

@@ -11,6 +11,7 @@ class ShotCreate(BaseModel):
     content: str | None = None
     atmosphere: str | None = None
     ai_prompt: str | None = None
+    script_reference: str | None = None
     notes: str | None = None
 
 
@@ -21,6 +22,7 @@ class ShotUpdate(BaseModel):
     content: str | None = None
     atmosphere: str | None = None
     ai_prompt: str | None = None
+    script_reference: str | None = None
     reference_image_url: str | None = None
     notes: str | None = None
     sort_order: int | None = None
@@ -35,6 +37,7 @@ class ShotResponse(BaseModel):
     content: str | None
     atmosphere: str | None
     ai_prompt: str | None
+    script_reference: str | None
     reference_image_url: str | None
     notes: str | None
     sort_order: int

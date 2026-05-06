@@ -71,6 +71,7 @@ export interface Shot {
   content: string | null;
   atmosphere: string | null;
   ai_prompt: string | null;
+  script_reference: string | null;
   reference_image_url: string | null;
   notes: string | null;
   sort_order: number;
