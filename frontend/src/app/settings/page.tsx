@@ -39,7 +39,7 @@ export default function SettingsPage() {
     try {
       await api.updateSettings({
         name: name || undefined,
-        deepseek_api_key: apiKey || undefined,
+        deepseek_key: apiKey || undefined,
       });
       await loadUser();
       setSuccess(true);
