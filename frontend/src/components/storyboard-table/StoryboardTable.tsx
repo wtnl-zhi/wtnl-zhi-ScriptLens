@@ -110,11 +110,38 @@ function SortableRow({
     await onUpdate(row.id, { reference_image_url: null });
   };
 
+  const isLongText = (field: string) =>
+    ["content", "ai_prompt", "atmosphere"].includes(field);
+
   const renderCell = (field: string, value: string | number | null, className = "") => {
     const cellKey = `${row.id}-${field}`;
     const display = value === null || value === undefined ? "-" : String(value);
 
     if (editingCell === cellKey) {
+      if (isLongText(field)) {
+        return (
+          <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/20 pt-20" onClick={() => saveEdit(field)}>
+            <div className="w-full max-w-lg rounded-lg border bg-white p-4 shadow-lg" onClick={(e) => e.stopPropagation()}>
+              <textarea
+                autoFocus
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onBlur={() => saveEdit(field)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) saveEdit(field);
+                  if (e.key === "Escape") setEditingCell(null);
+                }}
+                rows={6}
+                className="w-full rounded border border-input bg-background p-2 text-sm font-mono leading-relaxed outline-none focus:ring-2 focus:ring-ring resize-y"
+              />
+              <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+                <span>{editValue.length} 字符</span>
+                <span>Ctrl+Enter 保存 · Esc 取消</span>
+              </div>
+            </div>
+          </div>
+        );
+      }
       return (
         <input
           autoFocus
