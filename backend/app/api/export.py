@@ -1,4 +1,5 @@
 import io
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse, StreamingResponse
@@ -36,9 +37,10 @@ async def export_excel_endpoint(
 ):
     project = await get_project_for_user(project_id, current_user.id, db)
     filepath = export_excel(project, project.shots)
+    filename = f"{project.title}_分镜表.xlsx"
     return FileResponse(
         filepath,
-        filename=f"{project.title}_分镜表.xlsx",
+        filename=filename,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
 
@@ -55,10 +57,11 @@ async def export_csv_endpoint(
     with open(filepath, "r", encoding="utf-8-sig") as f:
         content = f.read()
 
+    filename = f"{project.title}_分镜表.csv"
     return StreamingResponse(
         iter([content]),
         media_type="text/csv; charset=utf-8",
-        headers={"Content-Disposition": f'attachment; filename="{project.title}_分镜表.csv"'},
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{quote(filename)}"},
     )
 
 
@@ -78,10 +81,11 @@ async def export_pdf_endpoint(
     buffer.write(b"xref\n0 4\n0000000000 65535 f \n0000000009 00000 n \n0000000058 00000 n \n0000000115 00000 n \ntrailer\n<< /Size 4 /Root 1 0 R >>\nstartxref\n190\n%%EOF\n")
     buffer.seek(0)
 
+    filename = f"{project.title}_分镜表.pdf"
     return StreamingResponse(
         iter([buffer.getvalue()]),
         media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{project.title}_分镜表.pdf"'},
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{quote(filename)}"},
     )
 
 
@@ -93,8 +97,9 @@ async def export_images_endpoint(
 ):
     project = await get_project_for_user(project_id, current_user.id, db)
     filepath = export_images_zip(project.shots)
+    filename = f"{project.title}_参考图片.zip"
     return FileResponse(
         filepath,
-        filename=f"{project.title}_参考图片.zip",
+        filename=filename,
         media_type="application/zip",
     )
