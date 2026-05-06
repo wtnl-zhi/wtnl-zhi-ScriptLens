@@ -105,14 +105,36 @@ def _call_deepseek(api_key: str, model: str, script_text: str) -> list[dict]:
     return shots
 
 
+def _generate_mock_from_script(script_text: str) -> list[dict]:
+    """Parse script text into simple shots for preview purposes."""
+    import re
+    parts = re.split(r"[。！？，,\n]+", script_text.strip())
+    parts = [p.strip() for p in parts if p.strip()]
+    if not parts:
+        parts = [script_text.strip()]
+
+    shot_types = ["全景", "中景", "近景", "特写", "中景", "全景"]
+    modified = []
+    for i, part in enumerate(parts[:12]):
+        modified.append({
+            "shot_number": i + 1,
+            "shot_type": shot_types[i % len(shot_types)],
+            "duration_sec": 3.0 + (i % 3) * 0.5,
+            "content": part,
+            "atmosphere": "日常" if i % 2 == 0 else "紧张",
+            "ai_prompt": f"{part}，电影级布光，写实风格，4K画质，自然色调",
+        })
+    return modified
+
+
 def generate_storyboard(
     script_text: str,
     model: str = "flash",
     api_key: str | None = None,
 ) -> list[dict]:
     if not api_key:
-        logger.info("No API key provided, returning mock data")
-        return MOCK_SHOTS
+        logger.info("No API key provided, generating preview from script")
+        return _generate_mock_from_script(script_text)
 
     last_error = None
     for attempt in range(3):
