@@ -104,11 +104,16 @@ export default function ProjectEditorPage() {
         throw new Error(err.detail || "导出失败");
       }
       const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
+      a.href = url;
       a.download = `${currentProject?.title || "分镜表"}.${type === "excel" ? "xlsx" : type}`;
+      document.body.appendChild(a);
       a.click();
-      URL.revokeObjectURL(a.href);
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 1000);
     } catch (err: unknown) {
       setGenerateError(err instanceof Error ? err.message : "导出失败");
     }
