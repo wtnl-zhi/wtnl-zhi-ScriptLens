@@ -35,10 +35,12 @@ function SortableRow({
   row,
   onUpdate,
   onDelete,
+  onPreview,
 }: {
   row: Shot;
   onUpdate: (id: string, data: Partial<Shot>) => Promise<void>;
   onDelete: (id: string) => void;
+  onPreview: (url: string) => void;
 }) {
   const {
     attributes,
@@ -197,8 +199,8 @@ function SortableRow({
               <img
                 src={row.reference_image_url.startsWith("http") ? row.reference_image_url : `${API_BASE}${row.reference_image_url}`}
                 alt="参考图"
-                className="h-16 w-16 cursor-pointer rounded object-cover"
-                onClick={() => window.open(row.reference_image_url.startsWith("http") ? row.reference_image_url : `${API_BASE}${row.reference_image_url}`, "_blank")}
+                className="h-20 w-20 cursor-pointer rounded object-cover hover:ring-2 hover:ring-primary"
+                onClick={() => onPreview(row.reference_image_url.startsWith("http") ? row.reference_image_url : `${API_BASE}${row.reference_image_url}`)}
               />
               <button
                 onClick={handleRemoveImage}
@@ -247,6 +249,7 @@ export default function StoryboardTable({
   onDeleteShot,
   onReorder,
 }: Props) {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -295,6 +298,7 @@ export default function StoryboardTable({
                   row={shot}
                   onUpdate={onUpdateShot}
                   onDelete={onDeleteShot}
+                  onPreview={setPreviewUrl}
                 />
               ))}
             </SortableContext>
@@ -310,6 +314,25 @@ export default function StoryboardTable({
           添加镜头
         </button>
       </div>
+      {previewUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setPreviewUrl(null)}
+        >
+          <img
+            src={previewUrl}
+            alt="参考图预览"
+            className="max-h-[80vh] max-w-[90vw] rounded-lg object-contain shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <button
+            onClick={() => setPreviewUrl(null)}
+            className="fixed right-6 top-6 text-2xl text-white hover:text-gray-300"
+          >
+            ✕
+          </button>
+        </div>
+      )}
     </div>
   );
 }
