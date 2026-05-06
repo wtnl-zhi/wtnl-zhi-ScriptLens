@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
@@ -8,8 +8,10 @@ import { useAuthStore } from "@/store/authStore";
 export default function Navbar() {
   const router = useRouter();
   const { token, user, logout, loadUser } = useAuthStore();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     if (token && !user) {
       loadUser();
     }
@@ -24,10 +26,10 @@ export default function Navbar() {
     <nav className="border-b bg-white">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
         <div className="flex items-center gap-6">
-          <Link href={token ? "/projects" : "/"} className="text-lg font-bold">
+          <Link href={token && mounted ? "/projects" : "/"} className="text-lg font-bold">
             ScriptLens
           </Link>
-          {token && (
+          {token && mounted && (
             <div className="flex items-center gap-4 text-sm">
               <Link
                 href="/projects"
@@ -45,7 +47,7 @@ export default function Navbar() {
           )}
         </div>
         <div className="flex items-center gap-3">
-          {token ? (
+          {token && mounted ? (
             <>
               <span className="text-sm text-muted-foreground">
                 {user?.name || user?.email}
