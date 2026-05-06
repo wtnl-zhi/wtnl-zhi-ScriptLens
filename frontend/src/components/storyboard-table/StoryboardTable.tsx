@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import {
   DndContext,
   closestCenter,
@@ -17,13 +17,13 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Plus, Trash2 } from "lucide-react";
-import { Shot } from "@/lib/api";
+import { GripVertical, Plus, Trash2, Image, Loader2, X } from "lucide-react";
+import { api, Shot } from "@/lib/api";
 
 interface Props {
   shots: Shot[];
   onShotsChange: (shots: Shot[]) => void;
-  onUpdateShot: (id: string, data: Partial<Shot>) => void;
+  onUpdateShot: (id: string, data: Partial<Shot>) => Promise<void>;
   onAddShot: () => void;
   onDeleteShot: (id: string) => void;
   onReorder: (shots: Shot[]) => void;
@@ -35,7 +35,7 @@ function SortableRow({
   onDelete,
 }: {
   row: Shot;
-  onUpdate: (id: string, data: Partial<Shot>) => void;
+  onUpdate: (id: string, data: Partial<Shot>) => Promise<void>;
   onDelete: (id: string) => void;
 }) {
   const {
@@ -55,6 +55,8 @@ function SortableRow({
 
   const [editingCell, setEditingCell] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const startEdit = (field: string, currentValue: string) => {
     setEditingCell(`${row.id}-${field}`);
@@ -79,6 +81,33 @@ function SortableRow({
       onUpdate(row.id, updates);
     }
     setEditingCell(null);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const result = await api.uploadImage(file);
+      await onUpdate(row.id, { reference_image_url: result.url });
+    } catch (err) {
+      console.error("Upload failed:", err);
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleRemoveImage = async () => {
+    if (row.reference_image_url) {
+      const filename = row.reference_image_url.split("/").pop();
+      if (filename) {
+        try {
+          await api.deleteImage(filename);
+        } catch {}
+      }
+    }
+    await onUpdate(row.id, { reference_image_url: null });
   };
 
   const renderCell = (field: string, value: string | number | null, className = "") => {
@@ -128,12 +157,43 @@ function SortableRow({
       <td className="min-w-[160px] px-2 py-2">{renderCell("content", row.content)}</td>
       <td className="min-w-[120px] px-2 py-2">{renderCell("atmosphere", row.atmosphere)}</td>
       <td className="min-w-[160px] px-2 py-2">{renderCell("ai_prompt", row.ai_prompt)}</td>
-      <td className="w-12 px-2 py-2 text-center text-xs">
-        {row.reference_image_url ? (
-          <span className="text-primary">✓</span>
-        ) : (
-          "-"
-        )}
+      <td className="px-2 py-2">
+        <div className="flex items-center justify-center">
+          {uploading ? (
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          ) : row.reference_image_url ? (
+            <div className="group relative">
+              <img
+                src={row.reference_image_url}
+                alt="参考图"
+                className="h-10 w-10 rounded object-cover"
+              />
+              <button
+                onClick={handleRemoveImage}
+                className="absolute -right-1 -top-1 hidden rounded-full bg-destructive p-0.5 text-destructive-foreground group-hover:block"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ) : (
+            <>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                title="上传参考图"
+              >
+                <Image className="h-4 w-4" />
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleImageUpload}
+              />
+            </>
+          )}
+        </div>
       </td>
       <td className="w-10 px-2 py-2">
         <button
@@ -190,7 +250,7 @@ export default function StoryboardTable({
               <th className="px-2 py-2 text-left">画面内容</th>
               <th className="px-2 py-2 text-left">场景氛围</th>
               <th className="px-2 py-2 text-left">AI生图提示词</th>
-              <th className="w-12 px-2 py-2 text-center">参考图</th>
+              <th className="w-16 px-2 py-2 text-center">参考图</th>
               <th className="w-10 px-2 py-2 text-center">操作</th>
             </tr>
           </thead>
