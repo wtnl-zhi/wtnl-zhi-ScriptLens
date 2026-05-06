@@ -142,11 +142,12 @@ def _generate_mock_from_script(script_text: str) -> list[dict]:
     shot_types = ["全景", "中景", "近景", "特写", "中景", "全景"]
     modified = []
     for i, part in enumerate(parts[:12]):
+        st = shot_types[i % len(shot_types)]
         modified.append({
             "shot_number": i + 1,
-            "shot_type": shot_types[i % len(shot_types)],
+            "shot_type": st,
             "duration_sec": 3.0 + (i % 3) * 0.5,
-            "content": f"{part}",
+            "content": f"{st}拍摄：{part}，镜头捕捉画面细节与角色动作",
             "atmosphere": "日常" if i % 2 == 0 else "紧张",
             "ai_prompt": f"{part}，电影级布光，写实风格，4K画质，自然色调",
             "script_reference": part,

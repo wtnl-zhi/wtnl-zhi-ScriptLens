@@ -65,17 +65,17 @@ async def _save_shots(task_id: str, project_id: str, shots_data: list[dict]) -> 
         existing_count = len(existing_shots)
 
         for i, data in enumerate(shots_data):
-                shot = StoryboardShot(
-                    project_id=project_id,
-                    shot_number=existing_count + i + 1,
-                    shot_type=data.get("shot_type"),
-                    duration_sec=data.get("duration_sec"),
-                    content=data.get("content"),
-                    atmosphere=data.get("atmosphere"),
-                    ai_prompt=data.get("ai_prompt"),
-                    script_reference=data.get("script_reference"),
-                    sort_order=existing_count + i + 1,
-                )
+            shot = StoryboardShot(
+                project_id=project_id,
+                shot_number=existing_count + i + 1,
+                shot_type=data.get("shot_type"),
+                duration_sec=data.get("duration_sec"),
+                content=data.get("content"),
+                atmosphere=data.get("atmosphere"),
+                ai_prompt=data.get("ai_prompt"),
+                script_reference=data.get("script_reference"),
+                sort_order=existing_count + i + 1,
+            )
             db.add(shot)
 
         await db.commit()
