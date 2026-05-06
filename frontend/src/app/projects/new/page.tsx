@@ -34,7 +34,12 @@ export default function NewProjectPage() {
         title: title.trim(),
         source_text: script,
       });
-      await api.generateStoryboard(project.id, model);
+      const { task_id } = await api.generateStoryboard(project.id, model);
+      while (true) {
+        await new Promise((r) => setTimeout(r, 1500));
+        const status = await api.getTaskStatus(task_id);
+        if (status.status === "completed" || status.status === "failed") break;
+      }
       router.push(`/projects/${project.id}`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "创建项目失败");

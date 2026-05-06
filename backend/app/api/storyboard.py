@@ -14,16 +14,17 @@ from app.schemas.storyboard import (
     ShotCreate,
     ShotResponse,
     ShotUpdate,
+    TaskStatusResponse,
 )
-from app.services.deepseek import generate_storyboard
 from app.services.encryption import decrypt_value
+from app.services.task_manager import create_task, get_task
 from app.core.config import settings
 from app.api.auth import get_current_user
 
 router = APIRouter(prefix="/api/storyboard", tags=["storyboard"])
 
 
-@router.post("/generate", response_model=GenerateResponse)
+@router.post("/generate")
 async def generate(
     body: GenerateRequest,
     current_user: User = Depends(get_current_user),
@@ -45,28 +46,55 @@ async def generate(
         except Exception:
             pass
 
-    shots_data = generate_storyboard(project.source_text or "", body.model, api_key)
-    await db.flush()
+    task_id = create_task(
+        project_id=body.project_id,
+        script_text=project.source_text or "",
+        model=body.model,
+        api_key=api_key,
+    )
+    return {"task_id": task_id}
 
-    existing_count = len(project.shots)
-    shot_responses = []
-    for i, data in enumerate(shots_data):
-        shot = StoryboardShot(
-            project_id=project.id,
-            shot_number=existing_count + i + 1,
-            shot_type=data.get("shot_type"),
-            duration_sec=data.get("duration_sec"),
-            content=data.get("content"),
-            atmosphere=data.get("atmosphere"),
-            ai_prompt=data.get("ai_prompt"),
-            sort_order=existing_count + i + 1,
-        )
-        db.add(shot)
-        await db.flush()
-        await db.refresh(shot)
-        shot_responses.append(ShotResponse.model_validate(shot))
 
-    return GenerateResponse(shots=shot_responses)
+@router.get("/status/{task_id}")
+async def get_task_status(task_id: str) -> TaskStatusResponse:
+    task = get_task(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return TaskStatusResponse(
+        status=task["status"],
+        progress=task.get("progress", 0),
+        error=task.get("error"),
+    )
+
+
+@router.get("/results/{task_id}")
+async def get_task_results(
+    task_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    task = get_task(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    if task["status"] != "completed":
+        raise HTTPException(status_code=400, detail="Task not completed yet")
+
+    project_id = task.get("project_id")
+    if not project_id:
+        raise HTTPException(status_code=400, detail="Task has no associated project")
+
+    result = await db.execute(
+        select(Project)
+        .options(selectinload(Project.shots))
+        .where(Project.id == project_id, Project.user_id == current_user.id, Project.deleted_at.is_(None))
+    )
+    project = result.scalar_one_or_none()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    return {
+        "shots": [ShotResponse.model_validate(s) for s in project.shots],
+    }
 
 
 @router.put("/shots/{shot_id}", response_model=ShotResponse)

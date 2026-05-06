@@ -50,7 +50,13 @@ class GenerateRequest(BaseModel):
 
 
 class GenerateResponse(BaseModel):
-    shots: list[ShotResponse]
+    task_id: str
+
+
+class TaskStatusResponse(BaseModel):
+    status: str  # processing / completed / failed
+    progress: int = 0
+    error: str | None = None
 
 
 class ReorderItem(BaseModel):

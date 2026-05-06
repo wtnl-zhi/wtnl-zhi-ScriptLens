@@ -148,11 +148,23 @@ export function deleteProject(id: string): Promise<void> {
 export function generateStoryboard(
   projectId: string,
   model?: string
-): Promise<{ shots: Shot[] }> {
+): Promise<{ task_id: string }> {
   return request("POST", "/api/storyboard/generate", {
     project_id: projectId,
     model: model || "flash",
   });
+}
+
+export function getTaskStatus(
+  taskId: string
+): Promise<{ status: string; progress: number; error?: string }> {
+  return request("GET", `/api/storyboard/status/${taskId}`);
+}
+
+export function getTaskResults(
+  taskId: string
+): Promise<{ shots: Shot[] }> {
+  return request("GET", `/api/storyboard/results/${taskId}`);
 }
 
 export function updateShot(
@@ -244,6 +256,8 @@ export const api = {
   updateProject,
   deleteProject,
   generateStoryboard,
+  getTaskStatus,
+  getTaskResults,
   updateShot,
   createShot,
   deleteShot,

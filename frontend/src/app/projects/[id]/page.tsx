@@ -68,8 +68,18 @@ export default function ProjectEditorPage() {
     setGenerating(true);
     setGenerateError(null);
     try {
-      await api.generateStoryboard(projectId, model);
-      await loadProject(projectId);
+      const { task_id } = await api.generateStoryboard(projectId, model);
+      while (true) {
+        await new Promise((r) => setTimeout(r, 1500));
+        const status = await api.getTaskStatus(task_id);
+        if (status.status === "completed") {
+          await loadProject(projectId);
+          break;
+        }
+        if (status.status === "failed") {
+          throw new Error(status.error || "拆解失败");
+        }
+      }
     } catch (err: unknown) {
       setGenerateError(err instanceof Error ? err.message : "拆解失败");
     } finally {
