@@ -48,7 +48,7 @@ MODEL_MAP = {
 
 
 def _load_clean_prompt() -> tuple[str, str]:
-    prompt_dir = Path(__file__).parent.parent / "prompts"
+    prompt_dir = Path(__file__).parent.parent.parent / "prompts"
     path = prompt_dir / "scripts_clean.json"
     with open(path, encoding="utf-8") as f:
         data = json.load(f)
@@ -74,7 +74,7 @@ def clean_script(script_text: str, api_key: str) -> str:
 
 
 def _load_prompt() -> tuple[str, str]:
-    prompt_dir = Path(__file__).parent.parent / "prompts"
+    prompt_dir = Path(__file__).parent.parent.parent / "prompts"
     path = prompt_dir / "storyboard_split.json"
     with open(path, encoding="utf-8") as f:
         data = json.load(f)
