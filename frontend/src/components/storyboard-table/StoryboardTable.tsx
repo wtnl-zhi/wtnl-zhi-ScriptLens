@@ -20,6 +20,8 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Plus, Trash2, Image, Loader2, X } from "lucide-react";
 import { api, Shot } from "@/lib/api";
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
 interface Props {
   shots: Shot[];
   onShotsChange: (shots: Shot[]) => void;
@@ -193,7 +195,7 @@ function SortableRow({
           ) : row.reference_image_url ? (
             <div className="group relative">
               <img
-                src={row.reference_image_url}
+                src={row.reference_image_url.startsWith("http") ? row.reference_image_url : `${API_BASE}${row.reference_image_url}`}
                 alt="参考图"
                 className="h-10 w-10 rounded object-cover"
               />
