@@ -87,13 +87,31 @@ export default function ProjectEditorPage() {
     }
   };
 
-  const handleExport = (type: "excel" | "csv" | "pdf") => {
+  const handleExport = async (type: "excel" | "csv" | "pdf") => {
+    setGenerateError(null);
     const urls: Record<string, string> = {
       excel: api.getExcelUrl(projectId),
       csv: api.getCsvUrl(projectId),
       pdf: api.getPdfUrl(projectId),
     };
-    window.open(urls[type], "_blank");
+    try {
+      const token = api.getToken();
+      const res = await fetch(urls[type], {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || "导出失败");
+      }
+      const blob = await res.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `${currentProject?.title || "分镜表"}.${type === "excel" ? "xlsx" : type}`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch (err: unknown) {
+      setGenerateError(err instanceof Error ? err.message : "导出失败");
+    }
   };
 
   if (loading && !currentProject) {
