@@ -5,10 +5,16 @@ import { useRouter } from "next/navigation";
 import ScriptInput from "@/components/script-input/ScriptInput";
 import { api } from "@/lib/api";
 
+const MODELS = [
+  { value: "flash", label: "DeepSeek Flash（快速）" },
+  { value: "pro", label: "DeepSeek Pro（高质量）" },
+];
+
 export default function NewProjectPage() {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [script, setScript] = useState("");
+  const [model, setModel] = useState("flash");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,7 +34,7 @@ export default function NewProjectPage() {
         title: title.trim(),
         source_text: script,
       });
-      await api.generateStoryboard(project.id);
+      await api.generateStoryboard(project.id, model);
       router.push(`/projects/${project.id}`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "创建项目失败");
@@ -53,6 +59,19 @@ export default function NewProjectPage() {
         </div>
 
         <ScriptInput value={script} onChange={setScript} />
+
+        <div>
+          <label className="block text-sm font-medium mb-1">拆解模型</label>
+          <select
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            {MODELS.map((m) => (
+              <option key={m.value} value={m.value}>{m.label}</option>
+            ))}
+          </select>
+        </div>
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 

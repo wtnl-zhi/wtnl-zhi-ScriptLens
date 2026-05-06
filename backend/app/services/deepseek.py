@@ -1,16 +1,10 @@
-"""
-DeepSeek storyboard generation service.
+import json
+import logging
+import re
+import time
+from pathlib import Path
 
-Real implementation would use the OpenAI SDK with custom base_url:
-
-    import openai
-    client = openai.AsyncOpenAI(api_key=api_key, base_url="https://api.deepseek.com")
-    response = await client.chat.completions.create(
-        model=f"deepseek-{model}",
-        messages=[...],
-        response_format={"type": "json_object"},
-    )
-"""
+logger = logging.getLogger(__name__)
 
 MOCK_SHOTS = [
     {
@@ -47,34 +41,88 @@ MOCK_SHOTS = [
     },
 ]
 
+MODEL_MAP = {
+    "flash": "deepseek-chat",
+    "pro": "deepseek-reasoner",
+}
+
+
+def _load_prompt() -> tuple[str, str]:
+    prompt_dir = Path(__file__).parent.parent / "prompts"
+    path = prompt_dir / "storyboard_split.json"
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    return data["system_prompt"], data["user_template"]
+
+
+def _extract_json(text: str) -> list[dict] | None:
+    text = text.strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.MULTILINE)
+        text = re.sub(r"\s*```$", "", text, flags=re.MULTILINE)
+    try:
+        parsed = json.loads(text)
+        if isinstance(parsed, list):
+            return parsed
+        if isinstance(parsed, dict) and "shots" in parsed:
+            return parsed["shots"]
+    except json.JSONDecodeError:
+        pass
+    match = re.search(r"\[\s*\{.*\}\s*\]", text, re.DOTALL)
+    if match:
+        try:
+            return json.loads(match.group())
+        except json.JSONDecodeError:
+            pass
+    return None
+
+
+def _call_deepseek(api_key: str, model: str, script_text: str) -> list[dict]:
+    from openai import OpenAI
+
+    system_prompt, user_template = _load_prompt()
+    user_message = user_template.replace("{script_text}", script_text)
+    deepseek_model = MODEL_MAP.get(model, "deepseek-chat")
+
+    client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com")
+
+    kwargs = {
+        "model": deepseek_model,
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_message},
+        ],
+    }
+    if model != "pro":
+        kwargs["response_format"] = {"type": "json_object"}
+
+    response = client.chat.completions.create(**kwargs)
+    content = response.choices[0].message.content or ""
+
+    shots = _extract_json(content)
+    if shots is None:
+        raise ValueError(f"Failed to parse JSON from model response: {content[:200]}")
+    return shots
+
 
 def generate_storyboard(
     script_text: str,
     model: str = "flash",
     api_key: str | None = None,
 ) -> list[dict]:
-    """
-    Generate storyboard shots from script text.
+    if not api_key:
+        logger.info("No API key provided, returning mock data")
+        return MOCK_SHOTS
 
-    Args:
-        script_text: The script to analyze
-        model: Model to use ('flash' or 'reasoner')
-        api_key: Optional DeepSeek API key for real API call
+    last_error = None
+    for attempt in range(3):
+        try:
+            return _call_deepseek(api_key, model, script_text)
+        except Exception as e:
+            last_error = e
+            logger.warning("DeepSeek API attempt %d/3 failed: %s", attempt + 1, e)
+            if attempt < 2:
+                time.sleep(2 ** (attempt + 1))
 
-    Returns:
-        List of shot dicts with shot_number, shot_type, duration_sec, content, atmosphere, ai_prompt
-
-    Real implementation:
-        import openai
-        client = openai.OpenAI(api_key=api_key, base_url="https://api.deepseek.com")
-        response = client.chat.completions.create(
-            model=f"deepseek-{model}",
-            messages=[
-                {"role": "system", "content": "..."},
-                {"role": "user", "content": script_text},
-            ],
-            response_format={"type": "json_object"},
-        )
-        return json.loads(response.choices[0].message.content)
-    """
-    return MOCK_SHOTS
+    logger.error("All 3 DeepSeek API attempts failed: %s", last_error)
+    raise RuntimeError(f"AI 拆解失败，请稍后重试: {last_error}")
