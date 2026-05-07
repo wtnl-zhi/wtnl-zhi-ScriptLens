@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Download, Settings, Loader2, Sparkles, Film } from "lucide-react";
+import { ArrowLeft, Download, Settings, Loader2, Sparkles, Film, History, Save } from "lucide-react";
 import StoryboardTable from "@/components/storyboard-table/StoryboardTable";
 import CommentsPanel from "@/components/storyboard-table/CommentsPanel";
 import { api, Shot } from "@/lib/api";
@@ -35,6 +35,9 @@ export default function ProjectEditorPage() {
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [model, setModel] = useState("flash");
   const [commentShotId, setCommentShotId] = useState<string | null>(null);
+  const [savingVersion, setSavingVersion] = useState(false);
+  const [versions, setVersions] = useState<Array<{id:string;version_number:number;shot_count:number;created_at:string}>>([]);
+  const [showVersions, setShowVersions] = useState(false);
 
   useEffect(() => {
     loadProject(projectId).catch(() => router.push("/projects"));
@@ -64,6 +67,35 @@ export default function ProjectEditorPage() {
     },
     [deleteShot]
   );
+
+  const handleSaveVersion = async () => {
+    setSavingVersion(true);
+    try {
+      await api.saveVersion(projectId);
+    } catch {}
+    setSavingVersion(false);
+  };
+
+  const handleShowVersions = async () => {
+    setShowVersions(!showVersions);
+    if (!showVersions) {
+      try {
+        const res = await api.listVersions(projectId);
+        setVersions(res.items);
+      } catch {}
+    }
+  };
+
+  const handleRestoreVersion = async (versionId: string) => {
+    if (!confirm("确定要恢复到此版本吗？当前修改将丢失。")) return;
+    try {
+      await api.restoreVersion(projectId, versionId);
+      await loadProject(projectId);
+      setShowVersions(false);
+    } catch (err: unknown) {
+      setGenerateError(err instanceof Error ? err.message : "恢复失败");
+    }
+  };
 
   const handleReorder = useCallback(
     async (items: Shot[]) => {
@@ -183,6 +215,14 @@ export default function ProjectEditorPage() {
             </>
           )}
           <div className="flex items-center gap-1">
+            <button onClick={handleSaveVersion} disabled={savingVersion} className="btn-secondary gap-1" title="保存版本">
+              <Save className="h-3 w-3" />
+              保存
+            </button>
+            <button onClick={handleShowVersions} className="btn-secondary gap-1" title="版本历史">
+              <History className="h-3 w-3" />
+              历史
+            </button>
             {(["excel", "csv", "pdf"] as const).map((type) => (
               <button
                 key={type}
@@ -260,6 +300,33 @@ export default function ProjectEditorPage() {
           )}
         </div>
       </div>
+      {showVersions && (
+        <div className="fixed bottom-0 right-0 z-40 w-full max-w-sm border-l bg-white shadow-xl" style={{ top: "3.5rem" }}>
+          <div className="flex items-center justify-between border-b px-4 py-3">
+            <h3 className="text-sm font-medium">版本历史</h3>
+            <button onClick={() => setShowVersions(false)} className="text-muted-foreground hover:text-foreground">
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="overflow-y-auto p-4 space-y-2" style={{ height: "calc(100vh - 8rem)" }}>
+            {versions.length === 0 ? (
+              <p className="text-center text-sm text-muted-foreground py-8">暂无版本</p>
+            ) : (
+              versions.map((v) => (
+                <div key={v.id} className="flex items-center justify-between rounded-lg border px-3 py-2.5">
+                  <div>
+                    <p className="text-sm font-medium">版本 {v.version_number}</p>
+                    <p className="text-xs text-muted-foreground">{v.shot_count} 个镜头 · {v.created_at ? new Date(v.created_at).toLocaleString("zh-CN") : ""}</p>
+                  </div>
+                  <button onClick={() => handleRestoreVersion(v.id)} className="btn-secondary text-xs">
+                    恢复
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
       {commentShotId && (
         <CommentsPanel
           shotId={commentShotId}

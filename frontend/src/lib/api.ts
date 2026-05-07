@@ -209,6 +209,27 @@ export function deleteComment(shotId: string, commentId: string): Promise<void> 
   return request("DELETE", `/api/storyboard/shots/${shotId}/comments/${commentId}`);
 }
 
+// ---- Versions ----
+
+export function saveVersion(
+  projectId: string
+): Promise<{ id: string; version_number: number; shot_count: number; created_at: string }> {
+  return request("POST", `/api/projects/${projectId}/versions/save`);
+}
+
+export function listVersions(
+  projectId: string
+): Promise<{ items: Array<{ id: string; version_number: number; shot_count: number; created_at: string }> }> {
+  return request("GET", `/api/projects/${projectId}/versions`);
+}
+
+export function restoreVersion(
+  projectId: string,
+  versionId: string
+): Promise<{ message: string; shot_count: number }> {
+  return request("POST", `/api/projects/${projectId}/versions/${versionId}/restore`);
+}
+
 export function cleanScript(
   text: string
 ): Promise<{ cleaned_text: string }> {
@@ -332,6 +353,9 @@ export const api = {
   listComments,
   createComment,
   deleteComment,
+  saveVersion,
+  listVersions,
+  restoreVersion,
   generateStoryboard,
   getTaskStatus,
   getTaskResults,
