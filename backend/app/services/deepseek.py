@@ -134,25 +134,29 @@ def _call_deepseek(api_key: str, model: str, script_text: str) -> list[dict]:
 def _generate_mock_from_script(script_text: str) -> list[dict]:
     """Parse script text into simple shots for preview purposes."""
     import re
-    parts = re.split(r"[。！？，,\n]+", script_text.strip())
-    parts = [p.strip() for p in parts if p.strip()]
-    if not parts:
-        parts = [script_text.strip()]
+    paragraphs = re.split(r"\n\s*\n", script_text.strip())
+    if not paragraphs or not paragraphs[0]:
+        paragraphs = [script_text.strip()]
 
-    shot_types = ["全景", "中景", "近景", "特写", "中景", "全景"]
-    modified = []
-    for i, part in enumerate(parts[:12]):
-        st = shot_types[i % len(shot_types)]
-        modified.append({
-            "shot_number": i + 1,
-            "shot_type": st,
-            "duration_sec": 3.0 + (i % 3) * 0.5,
-            "content": f"{st}拍摄：{part}，镜头捕捉画面细节与角色动作",
-            "atmosphere": "日常" if i % 2 == 0 else "紧张",
-            "ai_prompt": f"{part}，电影级布光，写实风格，4K画质，自然色调",
-            "script_reference": part,
-        })
-    return modified
+    shots = []
+    for pi, para in enumerate(paragraphs[:6]):
+        sentences = re.split(r"[。！？]+", para)
+        sentences = [s.strip().strip("'\"「」『』") for s in sentences if s.strip()]
+        shot_types = ["全景", "中景", "近景", "特写", "中景", "远景"]
+        for si, sent in enumerate(sentences[:4]):
+            idx = len(shots)
+            st = shot_types[idx % len(shot_types)]
+            duration = 3.0 + (idx % 3) * 0.5
+            shots.append({
+                "shot_number": idx + 1,
+                "shot_type": st,
+                "duration_sec": duration,
+                "content": f"{st}镜头：{sent}",
+                "atmosphere": ["安静", "压抑", "轻松", "紧张", "温暖", "冷峻"][idx % 6],
+                "ai_prompt": f"{sent}，电影级布光，写实风格，4K画质",
+                "script_reference": sent,
+            })
+    return shots[:20]
 
 
 def generate_storyboard(
