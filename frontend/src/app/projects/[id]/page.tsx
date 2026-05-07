@@ -43,13 +43,15 @@ export default function ProjectEditorPage() {
 
   const { send: wsSend } = useWebSocket(projectId, {
     onShotUpdated: (data) => {
-      setShots((prev) => prev.map((s) => s.id === data.shot_id ? { ...s, ...data.updates } : s));
+      const { shots: currentShots } = useProjectStore.getState();
+      setShots(currentShots.map((s) => s.id === data.shot_id ? { ...s, ...data.updates } : s));
     },
     onShotAdded: (data) => {
       loadProject(projectId);
     },
     onShotDeleted: (data) => {
-      setShots((prev) => prev.filter((s) => s.id !== data.shot_id));
+      const { shots: currentShots } = useProjectStore.getState();
+      setShots(currentShots.filter((s) => s.id !== data.shot_id));
     },
     onOnlineCount: setOnlineCount,
   });

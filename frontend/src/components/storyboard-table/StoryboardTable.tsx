@@ -290,8 +290,19 @@ export default function StoryboardTable({
     [shots, onReorder]
   );
 
+  const FIELD_LABELS: Record<string, string> = {
+    shot_type: "景别",
+    duration_sec: "时长",
+    content: "画面内容",
+    atmosphere: "场景氛围",
+    script_reference: "对应脚本",
+    ai_prompt: "AI生图提示词",
+  };
+
   return (
-    <div className="overflow-x-auto rounded-xl border shadow-sm">
+    <div className="rounded-xl border shadow-sm">
+      {/* Desktop table view */}
+      <div className="hidden md:block overflow-x-auto">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <table className="w-full border-collapse">
           <thead>
@@ -333,6 +344,48 @@ export default function StoryboardTable({
           添加镜头
         </button>
       </div>
+      </div>
+
+      {/* Mobile card view */}
+      <div className="md:hidden divide-y">
+        {shots.map((shot, i) => (
+          <div key={shot.id} className="p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-primary">#{shot.shot_number}</span>
+              <button onClick={() => onDeleteShot(shot.id)} className="text-muted-foreground hover:text-destructive">
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            {(["shot_type", "duration_sec", "content", "atmosphere", "script_reference", "ai_prompt"] as const).map((field) => {
+              const val = shot[field];
+              if (val === null || val === undefined || val === "") return null;
+              return (
+                <div key={field} className="text-sm">
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase">{FIELD_LABELS[field] || field}</span>
+                  <p className="mt-0.5 leading-relaxed">{String(val)}</p>
+                </div>
+              );
+            })}
+            {shot.reference_image_url && (
+              <div>
+                <span className="text-[10px] font-medium text-muted-foreground">参考图</span>
+                <img
+                  src={shot.reference_image_url.startsWith("http") ? shot.reference_image_url : `${API_BASE}${shot.reference_image_url}`}
+                  alt="参考图"
+                  className="mt-1 h-24 w-24 rounded object-cover"
+                  onClick={() => setPreviewUrl(shot.reference_image_url!.startsWith("http") ? shot.reference_image_url! : `${API_BASE}${shot.reference_image_url!}`)}
+                />
+              </div>
+            )}
+          </div>
+        ))}
+        <div className="p-3">
+          <button onClick={onAddShot} className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-primary">
+            <Plus className="h-4 w-4" /> 添加镜头
+          </button>
+        </div>
+      </div>
+
       {previewUrl && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
