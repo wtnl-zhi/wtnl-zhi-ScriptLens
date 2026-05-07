@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ScriptInput from "@/components/script-input/ScriptInput";
 import { api } from "@/lib/api";
+import { Loader2, Sparkles } from "lucide-react";
 
 const MODELS = [
   { value: "flash", label: "DeepSeek Flash（快速）" },
@@ -50,27 +51,28 @@ export default function NewProjectPage() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="mb-6 text-2xl font-bold">新建项目</h1>
-      <div className="space-y-6">
+      <h1 className="page-title mb-8">新建项目</h1>
+
+      <div className="card-panel p-6 space-y-6">
         <div>
-          <label className="block text-sm font-medium mb-1">项目标题</label>
+          <label className="section-label">项目标题</label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="输入项目标题"
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            className="input-field"
           />
         </div>
 
         <ScriptInput value={script} onChange={setScript} />
 
         <div>
-          <label className="block text-sm font-medium mb-1">拆解模型</label>
+          <label className="section-label">拆解模型</label>
           <select
             value={model}
             onChange={(e) => setModel(e.target.value)}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            className="input-field"
           >
             {MODELS.map((m) => (
               <option key={m.value} value={m.value}>{m.label}</option>
@@ -78,14 +80,28 @@ export default function NewProjectPage() {
           </select>
         </div>
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error && (
+          <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {error}
+          </div>
+        )}
 
         <button
           onClick={handleSubmit}
           disabled={loading}
-          className="w-full rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+          className="btn-primary w-full gap-2"
         >
-          {loading ? "正在拆解..." : "开始拆解"}
+          {loading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              正在拆解...
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-4 w-4" />
+              开始拆解
+            </>
+          )}
         </button>
       </div>
     </div>

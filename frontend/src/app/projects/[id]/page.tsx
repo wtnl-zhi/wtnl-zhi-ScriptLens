@@ -3,14 +3,14 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Download, Settings, Loader2, Sparkles } from "lucide-react";
+import { ArrowLeft, Download, Settings, Loader2, Sparkles, Film } from "lucide-react";
 import StoryboardTable from "@/components/storyboard-table/StoryboardTable";
 import { api, Shot } from "@/lib/api";
 import { useProjectStore } from "@/store/projectStore";
 
 const MODELS = [
-  { value: "flash", label: "Flash（快速）" },
-  { value: "pro", label: "Pro（高质量）" },
+  { value: "flash", label: "DeepSeek Flash" },
+  { value: "pro", label: "DeepSeek Pro" },
 ];
 
 export default function ProjectEditorPage() {
@@ -121,8 +121,8 @@ export default function ProjectEditorPage() {
 
   if (loading && !currentProject) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="flex items-center justify-center py-32">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -131,23 +131,29 @@ export default function ProjectEditorPage() {
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link
             href="/projects"
-            className="text-muted-foreground hover:text-foreground transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-md border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            title="返回项目列表"
           >
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="h-4 w-4" />
           </Link>
-          <h1 className="text-xl font-bold">{currentProject.title}</h1>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight">{currentProject.title}</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {shots.length} 个镜头
+            </p>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {currentProject.source_text && (
             <>
               <select
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
-                className="rounded-md border border-input bg-background px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+                className="input-field w-auto text-xs py-1.5"
               >
                 {MODELS.map((m) => (
                   <option key={m.value} value={m.value}>{m.label}</option>
@@ -156,44 +162,33 @@ export default function ProjectEditorPage() {
               <button
                 onClick={handleGenerate}
                 disabled={generating}
-                className="flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                className="btn-primary gap-1.5 text-xs py-1.5 px-3"
               >
                 {generating ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <Sparkles className="h-3 w-3" />
+                  <Sparkles className="h-3.5 w-3.5" />
                 )}
                 {generating ? "拆解中..." : (shots.length > 0 ? "重新拆解" : "开始拆解")}
               </button>
             </>
           )}
-          <button
-            onClick={() => handleExport("excel")}
-            disabled={shots.length === 0}
-            className="flex items-center gap-1 rounded-md bg-secondary px-3 py-1.5 text-xs text-secondary-foreground hover:bg-secondary/80 disabled:opacity-30 transition-colors"
-          >
-            <Download className="h-3 w-3" />
-            Excel
-          </button>
-          <button
-            onClick={() => handleExport("csv")}
-            disabled={shots.length === 0}
-            className="flex items-center gap-1 rounded-md bg-secondary px-3 py-1.5 text-xs text-secondary-foreground hover:bg-secondary/80 disabled:opacity-30 transition-colors"
-          >
-            <Download className="h-3 w-3" />
-            CSV
-          </button>
-          <button
-            onClick={() => handleExport("pdf")}
-            disabled={shots.length === 0}
-            className="flex items-center gap-1 rounded-md bg-secondary px-3 py-1.5 text-xs text-secondary-foreground hover:bg-secondary/80 disabled:opacity-30 transition-colors"
-          >
-            <Download className="h-3 w-3" />
-            PDF
-          </button>
+          <div className="flex items-center gap-1">
+            {(["excel", "csv", "pdf"] as const).map((type) => (
+              <button
+                key={type}
+                onClick={() => handleExport(type)}
+                disabled={shots.length === 0}
+                className="btn-secondary gap-1 uppercase"
+              >
+                <Download className="h-3 w-3" />
+                {type}
+              </button>
+            ))}
+          </div>
           <Link
             href={`/projects/${projectId}/settings`}
-            className="flex items-center gap-1 rounded-md bg-secondary px-3 py-1.5 text-xs text-secondary-foreground hover:bg-secondary/80 transition-colors"
+            className="btn-secondary gap-1"
           >
             <Settings className="h-3 w-3" />
             设置
@@ -202,26 +197,39 @@ export default function ProjectEditorPage() {
       </div>
 
       {generateError && (
-        <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+        <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
           {generateError}
         </div>
       )}
 
       <div className="flex flex-col gap-6 lg:flex-row">
-        <div className="w-full lg:w-1/3">
-          <div className="rounded-lg border bg-muted/20 p-4">
-            <h2 className="mb-3 text-sm font-medium">原始脚本</h2>
-            <pre className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground font-mono">
-              {currentProject.source_text || "无脚本内容"}
-            </pre>
+        <div className="w-full lg:w-1/3 lg:max-w-sm">
+          <div className="card-panel overflow-hidden">
+            <div className="border-b bg-muted/30 px-4 py-2.5">
+              <h2 className="text-sm font-medium">原始脚本</h2>
+            </div>
+            <div className="max-h-[60vh] overflow-y-auto p-4">
+              {currentProject.source_text ? (
+                <pre className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground font-mono">
+                  {currentProject.source_text}
+                </pre>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                  <Film className="mb-2 h-8 w-8 opacity-30" />
+                  <p className="text-sm">无脚本内容</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-        <div className="w-full lg:w-2/3">
+        <div className="flex-1 min-w-0">
           {shots.length === 0 && !generating ? (
-            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-20">
-              <Sparkles className="mb-2 h-10 w-10 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">尚未生成分镜</p>
-              <p className="mt-1 text-xs text-muted-foreground">点击右上角「开始拆解」按钮</p>
+            <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed py-24">
+              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/5">
+                <Sparkles className="h-7 w-7 text-primary/40" />
+              </div>
+              <p className="text-base font-medium text-muted-foreground">尚未生成分镜</p>
+              <p className="mt-1 text-sm text-muted-foreground/60">点击右上角「开始拆解」按钮</p>
             </div>
           ) : (
             <StoryboardTable
@@ -234,8 +242,8 @@ export default function ProjectEditorPage() {
             />
           )}
           {generating && shots.length === 0 && (
-            <div className="flex items-center justify-center rounded-lg border py-20">
-              <div className="flex flex-col items-center gap-2">
+            <div className="flex items-center justify-center rounded-xl border py-24">
+              <div className="flex flex-col items-center gap-3">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 <span className="text-sm text-muted-foreground">AI 正在拆解脚本...</span>
               </div>

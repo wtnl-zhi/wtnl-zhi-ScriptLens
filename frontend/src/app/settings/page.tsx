@@ -4,6 +4,7 @@ import { useState, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
+import { Loader2, Save, Key, User } from "lucide-react";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -26,9 +27,7 @@ export default function SettingsPage() {
   }, [token, router, loadUser]);
 
   useEffect(() => {
-    if (user) {
-      setName(user.name || "");
-    }
+    if (user) setName(user.name || "");
   }, [user]);
 
   const handleSave = async (e: FormEvent) => {
@@ -44,6 +43,7 @@ export default function SettingsPage() {
       await loadUser();
       setSuccess(true);
       setApiKey("");
+      setTimeout(() => setSuccess(false), 3000);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "保存失败");
     } finally {
@@ -53,47 +53,79 @@ export default function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-lg">
-      <h1 className="mb-6 text-2xl font-bold">设置</h1>
+      <h1 className="page-title mb-8">设置</h1>
 
-      <form onSubmit={handleSave} className="space-y-5">
-        <div>
-          <label className="block text-sm font-medium mb-1">显示名称</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            placeholder="您的名称"
-          />
+      <form onSubmit={handleSave} className="space-y-6">
+        <div className="card-panel p-6 space-y-5">
+          <div className="flex items-center gap-3 border-b pb-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+              <User className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-sm font-medium">个人信息</h2>
+              <p className="text-xs text-muted-foreground">{user?.email}</p>
+            </div>
+          </div>
+          <div>
+            <label className="section-label">显示名称</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="input-field"
+              placeholder="您的名称"
+            />
+          </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            DeepSeek API Key
-          </label>
-          <input
-            type="password"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-          />
-          <p className="mt-1 text-xs text-muted-foreground">
-            留空则保持现有 Key 不变。输入新 Key 将覆盖。
-          </p>
+        <div className="card-panel p-6 space-y-5">
+          <div className="flex items-center gap-3 border-b pb-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+              <Key className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-sm font-medium">DeepSeek API</h2>
+              <p className="text-xs text-muted-foreground">配置 API Key 以启用 AI 拆解功能</p>
+            </div>
+          </div>
+          <div>
+            <label className="section-label">API Key</label>
+            <input
+              type="password"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              className="input-field"
+              placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            />
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              留空则保持现有 Key 不变。Key 会加密存储。
+            </p>
+          </div>
         </div>
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error && (
+          <div className="rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {error}
+          </div>
+        )}
         {success && (
-          <p className="text-sm text-green-600">保存成功</p>
+          <div className="rounded-md bg-green-50 px-4 py-3 text-sm text-green-700 border border-green-200">
+            设置保存成功
+          </div>
         )}
 
-        <button
-          type="submit"
-          disabled={saving}
-          className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
-        >
-          {saving ? "保存中..." : "保存设置"}
+        <button type="submit" disabled={saving} className="btn-primary w-full gap-2">
+          {saving ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              保存中...
+            </>
+          ) : (
+            <>
+              <Save className="h-4 w-4" />
+              保存设置
+            </>
+          )}
         </button>
       </form>
     </div>

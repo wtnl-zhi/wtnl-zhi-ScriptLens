@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
+import { Clapperboard, LogOut, Settings as SettingsIcon, Film } from "lucide-react";
 
 export default function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
   const { token, user, logout, loadUser } = useAuthStore();
   const [mounted, setMounted] = useState(false);
 
@@ -22,47 +24,68 @@ export default function Navbar() {
     router.push("/login");
   };
 
+  const navLinks = [
+    { href: "/projects", label: "项目列表" },
+    { href: "/settings", label: "设置" },
+  ];
+
   return (
-    <nav className="border-b bg-white">
-      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
-        <div className="flex items-center gap-6">
-          <Link href={token && mounted ? "/projects" : "/"} className="text-lg font-bold">
-            ScriptLens
+    <nav className="sticky top-0 z-40 border-b bg-white/80 backdrop-blur-md">
+      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center gap-8">
+          <Link
+            href={token && mounted ? "/projects" : "/"}
+            className="flex items-center gap-2 text-lg font-bold tracking-tight"
+          >
+            <Film className="h-5 w-5 text-primary" />
+            <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+              ScriptLens
+            </span>
           </Link>
           {token && mounted && (
-            <div className="flex items-center gap-4 text-sm">
-              <Link
-                href="/projects"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                项目列表
-              </Link>
-              <Link
-                href="/settings"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                设置
-              </Link>
+            <div className="hidden sm:flex items-center gap-1">
+              {navLinks.map((link) => {
+                const isActive = pathname?.startsWith(link.href);
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                      isActive
+                        ? "bg-accent text-accent-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
             </div>
           )}
         </div>
         <div className="flex items-center gap-3">
           {token && mounted ? (
             <>
-              <span className="text-sm text-muted-foreground">
+              <span className="hidden sm:block text-sm text-muted-foreground">
                 {user?.name || user?.email}
               </span>
               <button
                 onClick={handleLogout}
-                className="rounded-md bg-destructive px-3 py-1.5 text-xs text-destructive-foreground hover:bg-destructive/90 transition-colors"
+                className="inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-destructive hover:border-destructive/30 transition-colors"
               >
-                退出登录
+                <LogOut className="h-3 w-3" />
+                退出
               </button>
             </>
           ) : (
+            !mounted && (
+              <div className="h-8 w-20 animate-pulse rounded-md bg-muted" />
+            )
+          )}
+          {!token && mounted && (
             <Link
               href="/login"
-              className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground hover:bg-primary/90 transition-colors"
+              className="btn-primary text-xs px-4 py-1.5"
             >
               登录
             </Link>

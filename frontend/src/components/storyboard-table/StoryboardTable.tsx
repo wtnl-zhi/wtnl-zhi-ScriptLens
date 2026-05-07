@@ -173,7 +173,7 @@ function SortableRow({
   };
 
   return (
-    <tr ref={setNodeRef} style={style} className="border-b hover:bg-muted/30">
+    <tr ref={setNodeRef} style={style} className="border-b transition-colors hover:bg-accent/40">
       <td className="w-8 px-1 py-2">
         <button
           className="cursor-grab text-muted-foreground hover:text-foreground"
@@ -273,11 +273,11 @@ export default function StoryboardTable({
   );
 
   return (
-    <div className="overflow-x-auto rounded-lg border">
+    <div className="overflow-x-auto rounded-xl border shadow-sm">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <table className="w-full border-collapse">
           <thead>
-            <tr className="bg-muted/50 text-xs font-medium text-muted-foreground">
+            <tr className="sticky top-0 bg-muted/80 backdrop-blur-sm text-xs font-medium text-muted-foreground">
               <th className="w-8 px-1 py-2 text-left"><GripVertical className="h-3 w-3" /></th>
               <th className="w-10 px-2 py-2 text-center">镜号</th>
               <th className="w-16 px-2 py-2 text-left">景别</th>
@@ -305,15 +305,16 @@ export default function StoryboardTable({
           </tbody>
         </table>
       </DndContext>
-      <div className="border-t p-2">
+      <div className="border-t px-3 py-2">
         <button
           onClick={onAddShot}
-          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
         >
           <Plus className="h-4 w-4" />
           添加镜头
         </button>
       </div>
+    </div>
       {previewUrl && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
