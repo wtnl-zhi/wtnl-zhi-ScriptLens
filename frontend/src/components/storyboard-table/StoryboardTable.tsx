@@ -196,12 +196,18 @@ function SortableRow({
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           ) : row.reference_image_url ? (
             <div className="group relative">
-              <img
-                src={row.reference_image_url.startsWith("http") ? row.reference_image_url : `${API_BASE}${row.reference_image_url}`}
-                alt="参考图"
-                className="h-20 w-20 cursor-pointer rounded object-cover hover:ring-2 hover:ring-primary"
-                onClick={() => onPreview(row.reference_image_url.startsWith("http") ? row.reference_image_url : `${API_BASE}${row.reference_image_url}`)}
-              />
+              {(() => {
+                const imgUrl = row.reference_image_url!;
+                const fullUrl = imgUrl.startsWith("http") ? imgUrl : `${API_BASE}${imgUrl}`;
+                return (
+                  <img
+                    src={fullUrl}
+                    alt="参考图"
+                    className="h-20 w-20 cursor-pointer rounded object-cover hover:ring-2 hover:ring-primary"
+                    onClick={() => onPreview(fullUrl)}
+                  />
+                );
+              })()}
               <button
                 onClick={handleRemoveImage}
                 className="absolute -right-1.5 -top-1.5 hidden rounded-full bg-destructive p-0.5 text-destructive-foreground group-hover:block"
@@ -327,7 +333,6 @@ export default function StoryboardTable({
           添加镜头
         </button>
       </div>
-    </div>
       {previewUrl && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"

@@ -48,7 +48,6 @@ export default function ProjectEditorPage() {
     window.addEventListener("open-comments", handler as EventListener);
     return () => window.removeEventListener("open-comments", handler as EventListener);
   }, []);
-  }, [projectId, loadProject, router]);
 
   const handleUpdateShot = useCallback(
     async (id: string, data: Partial<Shot>) => {
