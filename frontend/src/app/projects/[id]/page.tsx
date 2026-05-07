@@ -128,6 +128,13 @@ export default function ProjectEditorPage() {
     setGenerating(true);
     setGenerateError(null);
     try {
+      if (shots.length > 0) {
+        await api.saveVersion(projectId);
+        if (showVersions) {
+          const res = await api.listVersions(projectId);
+          setVersions(res.items);
+        }
+      }
       const { task_id } = await api.generateStoryboard(projectId, model);
       while (true) {
         await new Promise((r) => setTimeout(r, 1500));
