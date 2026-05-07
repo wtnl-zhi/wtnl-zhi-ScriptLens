@@ -147,11 +147,20 @@ def _generate_mock_from_script(script_text: str) -> list[dict]:
             idx = len(shots)
             st = shot_types[idx % len(shot_types)]
             duration = 3.0 + (idx % 3) * 0.5
+            scenes = {
+                "全景": "环境与人物位置关系",
+                "中景": "角色动作与姿态",
+                "近景": "面部表情与情绪细节",
+                "特写": "局部动作与道具细节",
+                "远景": "整体环境氛围",
+            }
+            desc = scenes.get(st, "画面描述")
+            content = f"{sent}。{st}展现{desc}"
             shots.append({
                 "shot_number": idx + 1,
                 "shot_type": st,
                 "duration_sec": duration,
-                "content": f"{st}镜头：{sent}",
+                "content": content,
                 "atmosphere": ["安静", "压抑", "轻松", "紧张", "温暖", "冷峻"][idx % 6],
                 "ai_prompt": f"{sent}，电影级布光，写实风格，4K画质",
                 "script_reference": sent,
