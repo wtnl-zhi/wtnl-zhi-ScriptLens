@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api import auth, export, health, projects, storyboard, upload
+from app.api import auth, collaborators, export, health, projects, storyboard, upload
 from app.core.config import settings
 from app.core.database import Base, engine
 
@@ -33,6 +33,7 @@ app.include_router(projects.router)
 app.include_router(storyboard.router)
 app.include_router(upload.router)
 app.include_router(export.router)
+app.include_router(collaborators.router)
 
 import os
 upload_dir = settings.UPLOAD_DIR

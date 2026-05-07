@@ -133,6 +133,41 @@ export function getProject(
   return request("GET", `/api/projects/${id}`);
 }
 
+// ---- Collaborators ----
+
+export interface Collaborator {
+  id: string;
+  user_id: string;
+  email: string;
+  name: string;
+  role: string;
+  joined_at: string | null;
+}
+
+export function listCollaborators(
+  projectId: string
+): Promise<{ items: Collaborator[] }> {
+  return request("GET", `/api/projects/${projectId}/collaborators`);
+}
+
+export function inviteCollaborator(
+  projectId: string,
+  email: string,
+  role?: string
+): Promise<{ message: string; collaborator_id: string }> {
+  return request("POST", `/api/projects/${projectId}/collaborators/invite`, {
+    email,
+    role: role || "editor",
+  });
+}
+
+export function removeCollaborator(
+  projectId: string,
+  collaboratorId: string
+): Promise<void> {
+  return request("DELETE", `/api/projects/${projectId}/collaborators/${collaboratorId}`);
+}
+
 export function updateProject(
   id: string,
   data: Partial<Project>
@@ -263,6 +298,9 @@ export const api = {
   updateProject,
   deleteProject,
   cleanScript,
+  listCollaborators,
+  inviteCollaborator,
+  removeCollaborator,
   generateStoryboard,
   getTaskStatus,
   getTaskResults,

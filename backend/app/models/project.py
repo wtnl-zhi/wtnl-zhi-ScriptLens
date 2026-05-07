@@ -22,3 +22,4 @@ class Project(Base):
 
     shots = relationship("StoryboardShot", back_populates="project", cascade="all, delete-orphan",
                          order_by="StoryboardShot.sort_order")
+    collaborators = relationship("ProjectCollaborator", back_populates="project", cascade="all, delete-orphan")

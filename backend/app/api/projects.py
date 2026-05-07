@@ -8,6 +8,7 @@ from sqlalchemy.orm import selectinload
 from app.core.database import get_db
 from app.models.project import Project
 from app.models.user import User
+from app.models.project_collaborator import ProjectCollaborator
 from app.schemas.project import ProjectCreate, ProjectListResponse, ProjectResponse, ProjectUpdate
 from app.schemas.storyboard import ShotResponse
 from app.api.auth import get_current_user
@@ -22,12 +23,28 @@ async def list_projects(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    count_q = select(func.count(Project.id)).where(Project.user_id == current_user.id, Project.deleted_at.is_(None))
+    # Own projects
+    own_ids_q = select(Project.id).where(Project.user_id == current_user.id, Project.deleted_at.is_(None))
+    own_ids = (await db.execute(own_ids_q)).scalars().all()
+
+    # Shared projects
+    shared_ids_q = (
+        select(ProjectCollaborator.project_id)
+        .where(ProjectCollaborator.user_id == current_user.id)
+    )
+    shared_ids = (await db.execute(shared_ids_q)).scalars().all()
+
+    all_ids = list(set(list(own_ids) + list(shared_ids)))
+
+    if not all_ids:
+        return ProjectListResponse(items=[], total=0)
+
+    count_q = select(func.count(Project.id)).where(Project.id.in_(all_ids), Project.deleted_at.is_(None))
     total = (await db.execute(count_q)).scalar() or 0
 
     q = (
         select(Project)
-        .where(Project.user_id == current_user.id, Project.deleted_at.is_(None))
+        .where(Project.id.in_(all_ids), Project.deleted_at.is_(None))
         .order_by(Project.updated_at.desc())
         .offset((page - 1) * size)
         .limit(size)
@@ -57,15 +74,8 @@ async def get_project(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    q = (
-        select(Project)
-        .options(selectinload(Project.shots))
-        .where(Project.id == project_id, Project.user_id == current_user.id, Project.deleted_at.is_(None))
-    )
-    result = await db.execute(q)
-    project = result.scalar_one_or_none()
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
+    from app.services.permission import get_project_with_permission
+    project = await get_project_with_permission(project_id, current_user, db)
 
     return {
         "project": ProjectResponse.model_validate(project),
@@ -80,11 +90,8 @@ async def update_project(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    q = select(Project).where(Project.id == project_id, Project.user_id == current_user.id, Project.deleted_at.is_(None))
-    result = await db.execute(q)
-    project = result.scalar_one_or_none()
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
+    from app.services.permission import get_project_with_permission
+    project = await get_project_with_permission(project_id, current_user, db, require_role="editor")
 
     if body.title is not None:
         project.title = body.title
@@ -103,11 +110,8 @@ async def delete_project(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    q = select(Project).where(Project.id == project_id, Project.user_id == current_user.id, Project.deleted_at.is_(None))
-    result = await db.execute(q)
-    project = result.scalar_one_or_none()
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
+    from app.services.permission import get_project_with_permission
+    project = await get_project_with_permission(project_id, current_user, db, require_role="owner")
 
     project.deleted_at = datetime.now(timezone.utc)
     await db.flush()
