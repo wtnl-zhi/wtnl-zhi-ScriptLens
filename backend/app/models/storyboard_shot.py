@@ -26,3 +26,4 @@ class StoryboardShot(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     project = relationship("Project", back_populates="shots")
+    comments = relationship("Comment", back_populates="shot", cascade="all, delete-orphan")

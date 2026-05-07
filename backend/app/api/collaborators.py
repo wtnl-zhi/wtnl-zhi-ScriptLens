@@ -14,7 +14,7 @@ from app.services.permission import get_project_with_permission
 router = APIRouter(prefix="/api/projects/{project_id}/collaborators", tags=["collaborators"])
 
 
-@router.get("/")
+@router.get("")
 async def list_collaborators(
     project_id: str,
     current_user: User = Depends(get_current_user),

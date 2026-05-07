@@ -181,6 +181,34 @@ export function deleteProject(id: string): Promise<void> {
 
 // ---- Storyboard ----
 
+// ---- Comments ----
+
+export interface Comment {
+  id: string;
+  shot_id: string;
+  user_id: string;
+  user_name: string;
+  content: string;
+  created_at: string | null;
+}
+
+export function listComments(
+  shotId: string
+): Promise<{ items: Comment[] }> {
+  return request("GET", `/api/storyboard/shots/${shotId}/comments`);
+}
+
+export function createComment(
+  shotId: string,
+  content: string
+): Promise<Comment> {
+  return request("POST", `/api/storyboard/shots/${shotId}/comments`, { content });
+}
+
+export function deleteComment(shotId: string, commentId: string): Promise<void> {
+  return request("DELETE", `/api/storyboard/shots/${shotId}/comments/${commentId}`);
+}
+
 export function cleanScript(
   text: string
 ): Promise<{ cleaned_text: string }> {
@@ -301,6 +329,9 @@ export const api = {
   listCollaborators,
   inviteCollaborator,
   removeCollaborator,
+  listComments,
+  createComment,
+  deleteComment,
   generateStoryboard,
   getTaskStatus,
   getTaskResults,

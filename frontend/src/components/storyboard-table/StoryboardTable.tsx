@@ -229,13 +229,25 @@ function SortableRow({
           )}
         </div>
       </td>
-      <td className="w-10 px-2 py-2">
+      <td className="w-8 px-1 py-2 text-center">
+        <button
+          onClick={() => {
+            const event = new CustomEvent("open-comments", { detail: { shotId: row.id } });
+            window.dispatchEvent(event);
+          }}
+          className="text-xs text-muted-foreground hover:text-primary transition-colors"
+          title="评论"
+        >
+          💬
+        </button>
+      </td>
+      <td className="w-8 px-1 py-2">
         <button
           onClick={() => onDelete(row.id)}
           className="text-muted-foreground hover:text-destructive transition-colors"
           title="删除"
         >
-          <Trash2 className="h-4 w-4" />
+          <Trash2 className="h-3.5 w-3.5" />
         </button>
       </td>
     </tr>
@@ -287,7 +299,8 @@ export default function StoryboardTable({
               <th className="px-2 py-2 text-left">对应脚本</th>
               <th className="px-2 py-2 text-left">AI生图提示词</th>
               <th className="w-16 px-2 py-2 text-center">参考图</th>
-              <th className="w-10 px-2 py-2 text-center">操作</th>
+              <th className="w-8 px-1 py-2 text-center"></th>
+              <th className="w-8 px-1 py-2 text-center"></th>
             </tr>
           </thead>
           <tbody>

@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Download, Settings, Loader2, Sparkles, Film } from "lucide-react";
 import StoryboardTable from "@/components/storyboard-table/StoryboardTable";
+import CommentsPanel from "@/components/storyboard-table/CommentsPanel";
 import { api, Shot } from "@/lib/api";
 import { useProjectStore } from "@/store/projectStore";
 
@@ -33,9 +34,17 @@ export default function ProjectEditorPage() {
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [model, setModel] = useState("flash");
+  const [commentShotId, setCommentShotId] = useState<string | null>(null);
 
   useEffect(() => {
     loadProject(projectId).catch(() => router.push("/projects"));
+  }, [projectId, loadProject, router]);
+
+  useEffect(() => {
+    const handler = (e: CustomEvent) => setCommentShotId(e.detail.shotId);
+    window.addEventListener("open-comments", handler as EventListener);
+    return () => window.removeEventListener("open-comments", handler as EventListener);
+  }, []);
   }, [projectId, loadProject, router]);
 
   const handleUpdateShot = useCallback(
@@ -251,6 +260,12 @@ export default function ProjectEditorPage() {
           )}
         </div>
       </div>
+      {commentShotId && (
+        <CommentsPanel
+          shotId={commentShotId}
+          onClose={() => setCommentShotId(null)}
+        />
+      )}
     </div>
   );
 }
