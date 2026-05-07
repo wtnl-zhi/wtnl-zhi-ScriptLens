@@ -130,6 +130,7 @@ export default function ProjectEditorPage() {
     try {
       if (shots.length > 0) {
         await api.saveVersion(projectId);
+        setShots([]);
         if (showVersions) {
           const res = await api.listVersions(projectId);
           setVersions(res.items);
