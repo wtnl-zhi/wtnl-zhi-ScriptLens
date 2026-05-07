@@ -3,7 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Download, Settings, Loader2, Sparkles, Film, History, Save } from "lucide-react";
+import { ArrowLeft, Download, Settings, Loader2, Sparkles, Film, History, Save, Users } from "lucide-react";
+import { useWebSocket } from "@/lib/useWebSocket";
 import StoryboardTable from "@/components/storyboard-table/StoryboardTable";
 import CommentsPanel from "@/components/storyboard-table/CommentsPanel";
 import { api, Shot } from "@/lib/api";
@@ -38,6 +39,20 @@ export default function ProjectEditorPage() {
   const [savingVersion, setSavingVersion] = useState(false);
   const [versions, setVersions] = useState<Array<{id:string;version_number:number;shot_count:number;created_at:string}>>([]);
   const [showVersions, setShowVersions] = useState(false);
+  const [onlineCount, setOnlineCount] = useState(0);
+
+  const { send: wsSend } = useWebSocket(projectId, {
+    onShotUpdated: (data) => {
+      setShots((prev) => prev.map((s) => s.id === data.shot_id ? { ...s, ...data.updates } : s));
+    },
+    onShotAdded: (data) => {
+      loadProject(projectId);
+    },
+    onShotDeleted: (data) => {
+      setShots((prev) => prev.filter((s) => s.id !== data.shot_id));
+    },
+    onOnlineCount: setOnlineCount,
+  });
 
   useEffect(() => {
     loadProject(projectId).catch(() => router.push("/projects"));
@@ -52,19 +67,22 @@ export default function ProjectEditorPage() {
   const handleUpdateShot = useCallback(
     async (id: string, data: Partial<Shot>) => {
       await updateShot(id, data);
+      wsSend({ type: "edit_shot", shot_id: id, updates: data });
     },
-    [updateShot]
+    [updateShot, wsSend]
   );
 
   const handleAddShot = useCallback(async () => {
     await addShot();
-  }, [addShot]);
+    wsSend({ type: "add_shot", shot: {} });
+  }, [addShot, wsSend]);
 
   const handleDeleteShot = useCallback(
     async (id: string) => {
       await deleteShot(id);
+      wsSend({ type: "delete_shot", shot_id: id });
     },
-    [deleteShot]
+    [deleteShot, wsSend]
   );
 
   const handleSaveVersion = async () => {
@@ -184,6 +202,11 @@ export default function ProjectEditorPage() {
             <h1 className="text-xl font-bold tracking-tight">{currentProject.title}</h1>
             <p className="text-xs text-muted-foreground mt-0.5">
               {shots.length} 个镜头
+              {onlineCount > 1 && (
+                <span className="ml-2 inline-flex items-center gap-1 text-green-600">
+                  <Users className="h-3 w-3" /> {onlineCount} 人在线
+                </span>
+              )}
             </p>
           </div>
         </div>
