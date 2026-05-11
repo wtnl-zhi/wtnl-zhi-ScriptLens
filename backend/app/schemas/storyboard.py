@@ -13,6 +13,10 @@ class ShotCreate(BaseModel):
     ai_prompt: str | None = None
     script_reference: str | None = None
     notes: str | None = None
+    scene_name: str | None = None
+    characters: str | None = None
+    location: str | None = None
+    props: str | None = None
 
 
 class ShotUpdate(BaseModel):
@@ -25,6 +29,11 @@ class ShotUpdate(BaseModel):
     script_reference: str | None = None
     reference_image_url: str | None = None
     notes: str | None = None
+    scene_name: str | None = None
+    characters: str | None = None
+    location: str | None = None
+    props: str | None = None
+    shooting_order: int | None = None
     sort_order: int | None = None
 
 
@@ -40,6 +49,11 @@ class ShotResponse(BaseModel):
     script_reference: str | None
     reference_image_url: str | None
     notes: str | None
+    scene_name: str | None
+    characters: str | None
+    location: str | None
+    props: str | None
+    shooting_order: int | None
     sort_order: int
     created_at: datetime
     updated_at: datetime
@@ -57,7 +71,7 @@ class GenerateResponse(BaseModel):
 
 
 class TaskStatusResponse(BaseModel):
-    status: str  # processing / completed / failed
+    status: str
     progress: int = 0
     error: str | None = None
 
@@ -69,3 +83,14 @@ class ReorderItem(BaseModel):
 
 class ReorderRequest(BaseModel):
     items: list[ReorderItem]
+
+
+class OptimizeRequest(BaseModel):
+    project_id: str
+    field: str = "content"  # content or ai_prompt
+    model: str = "flash"
+
+
+class ShootingSummaryRequest(BaseModel):
+    project_id: str
+    model: str = "flash"

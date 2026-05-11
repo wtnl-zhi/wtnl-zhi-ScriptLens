@@ -74,6 +74,11 @@ export interface Shot {
   script_reference: string | null;
   reference_image_url: string | null;
   notes: string | null;
+  scene_name: string | null;
+  characters: string | null;
+  location: string | null;
+  props: string | null;
+  shooting_order: number | null;
   sort_order: number;
   created_at: string;
   updated_at: string;
@@ -230,6 +235,38 @@ export function restoreVersion(
   return request("POST", `/api/projects/${projectId}/versions/${versionId}/restore`);
 }
 
+// ---- Batch Optimize ----
+
+export function batchOptimize(
+  projectId: string,
+  field: "content" | "ai_prompt",
+  model?: string
+): Promise<{ task_id: string }> {
+  return request("POST", "/api/storyboard/batch-optimize", {
+    project_id: projectId,
+    field,
+    model: model || "flash",
+  });
+}
+
+// ---- Shooting Summary ----
+
+export function generateShootingSummary(
+  projectId: string,
+  model?: string
+): Promise<{ task_id: string }> {
+  return request("POST", "/api/storyboard/shooting-summary", {
+    project_id: projectId,
+    model: model || "flash",
+  });
+}
+
+export function getShootingSummary(
+  projectId: string
+): Promise<{ summary: string | null }> {
+  return request("GET", `/api/storyboard/shooting-summary/${projectId}`);
+}
+
 export function cleanScript(
   text: string
 ): Promise<{ cleaned_text: string }> {
@@ -346,6 +383,9 @@ export const api = {
   getProject,
   updateProject,
   deleteProject,
+  batchOptimize,
+  generateShootingSummary,
+  getShootingSummary,
   cleanScript,
   listCollaborators,
   inviteCollaborator,

@@ -3,10 +3,11 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Download, Settings, Loader2, Sparkles, Film, History, Save, Users } from "lucide-react";
+import { ArrowLeft, Download, Settings, Loader2, Sparkles, Film, History, Save, Users, List, ClipboardList } from "lucide-react";
 import { useWebSocket } from "@/lib/useWebSocket";
 import StoryboardTable from "@/components/storyboard-table/StoryboardTable";
 import CommentsPanel from "@/components/storyboard-table/CommentsPanel";
+import ShootingListView from "@/components/shooting-list/ShootingListView";
 import { api, Shot } from "@/lib/api";
 import { useProjectStore } from "@/store/projectStore";
 
@@ -40,6 +41,7 @@ export default function ProjectEditorPage() {
   const [versions, setVersions] = useState<Array<{id:string;version_number:number;shot_count:number;created_at:string}>>([]);
   const [showVersions, setShowVersions] = useState(false);
   const [onlineCount, setOnlineCount] = useState(0);
+  const [viewMode, setViewMode] = useState<"storyboard" | "shooting">("storyboard");
 
   const { send: wsSend } = useWebSocket(projectId, {
     onShotUpdated: (data) => {
@@ -304,6 +306,29 @@ export default function ProjectEditorPage() {
           </div>
         </div>
         <div className="flex-1 min-w-0">
+          {/* Tab switcher */}
+          {shots.length > 0 && (
+            <div className="mb-4 flex gap-1 rounded-lg bg-muted p-1 w-fit">
+              <button
+                onClick={() => setViewMode("storyboard")}
+                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
+                  viewMode === "storyboard" ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Film className="h-3.5 w-3.5" />
+                分镜
+              </button>
+              <button
+                onClick={() => setViewMode("shooting")}
+                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
+                  viewMode === "shooting" ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <ClipboardList className="h-3.5 w-3.5" />
+                拍摄清单
+              </button>
+            </div>
+          )}
           {shots.length === 0 && !generating ? (
             <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed py-24">
               <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/5">
@@ -312,7 +337,7 @@ export default function ProjectEditorPage() {
               <p className="text-base font-medium text-muted-foreground">尚未生成分镜</p>
               <p className="mt-1 text-sm text-muted-foreground/60">点击右上角「开始拆解」按钮</p>
             </div>
-          ) : (
+          ) : viewMode === "storyboard" ? (
             <StoryboardTable
               shots={shots}
               onShotsChange={setShots}
@@ -320,6 +345,12 @@ export default function ProjectEditorPage() {
               onAddShot={handleAddShot}
               onDeleteShot={handleDeleteShot}
               onReorder={handleReorder}
+            />
+          ) : (
+            <ShootingListView
+              shots={shots}
+              projectId={projectId}
+              onUpdateShot={handleUpdateShot}
             />
           )}
           {generating && shots.length === 0 && (

@@ -48,6 +48,7 @@ async def generate(
             pass
 
     task_id = create_task(
+        "generate",
         project_id=body.project_id,
         script_text=project.source_text or "",
         model=body.model,
@@ -119,6 +120,83 @@ async def get_task_results(
     return {
         "shots": [ShotResponse.model_validate(s) for s in project.shots],
     }
+
+
+# ---- Batch Optimize ----
+
+@router.post("/batch-optimize")
+async def batch_optimize(
+    body: dict,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    project_id = body.get("project_id")
+    field = body.get("field", "content")
+
+    result = await db.execute(
+        select(Project).where(Project.id == project_id, Project.user_id == current_user.id, Project.deleted_at.is_(None))
+    )
+    project = result.scalar_one_or_none()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    api_key = None
+    if current_user.encrypted_deepseek_key:
+        try:
+            api_key = decrypt_value(current_user.encrypted_deepseek_key, settings.ENCRYPTION_KEY)
+        except Exception:
+            pass
+    if not api_key:
+        raise HTTPException(status_code=400, detail="请在设置页配置 DeepSeek API Key")
+
+    task_id = create_task("optimize", project_id=project_id, field=field, api_key=api_key)
+    return {"task_id": task_id}
+
+
+# ---- Shooting Summary ----
+
+@router.post("/shooting-summary")
+async def generate_shooting_summary_endpoint(
+    body: dict,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    project_id = body.get("project_id")
+
+    result = await db.execute(
+        select(Project).where(Project.id == project_id, Project.user_id == current_user.id, Project.deleted_at.is_(None))
+    )
+    project = result.scalar_one_or_none()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    api_key = None
+    if current_user.encrypted_deepseek_key:
+        try:
+            api_key = decrypt_value(current_user.encrypted_deepseek_key, settings.ENCRYPTION_KEY)
+        except Exception:
+            pass
+    if not api_key:
+        raise HTTPException(status_code=400, detail="请在设置页配置 DeepSeek API Key")
+
+    task_id = create_task("shooting_summary", project_id=project_id, api_key=api_key)
+    return {"task_id": task_id}
+
+
+@router.get("/shooting-summary/{project_id}")
+async def get_shooting_summary(
+    project_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Project).where(Project.id == project_id, Project.user_id == current_user.id, Project.deleted_at.is_(None))
+    )
+    project = result.scalar_one_or_none()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    return {"summary": project.shooting_summary}
 
 
 @router.put("/shots/{shot_id}", response_model=ShotResponse)
