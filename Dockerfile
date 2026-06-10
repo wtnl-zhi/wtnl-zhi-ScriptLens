@@ -4,12 +4,14 @@ FROM python:3.13-slim AS backend
 WORKDIR /app/backend
 COPY backend/requirements.txt .
 
-# 安装中文字体支持 (wenquanyi 约 8MB)
+# pip mirror 加速
+RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && \
+    pip install --no-cache-dir -r requirements.txt
+
+# 中文字体 (wenquanyi ~8MB)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-wqy-zenhei \
     && rm -rf /var/lib/apt/lists/*
-
-RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ .
 
 EXPOSE 8000
