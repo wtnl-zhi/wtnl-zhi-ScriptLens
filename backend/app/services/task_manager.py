@@ -72,6 +72,10 @@ def _run_shooting_summary(task_id: str, project_id: str, api_key: str | None) ->
 
 
 async def _save_shots(task_id: str, project_id: str, shots_data: list[dict]) -> None:
+    if not shots_data:
+        _update_task(task_id, {"status": "failed", "error": "AI 未返回分镜数据，旧数据已保留，请重试"})
+        return
+
     async with async_session_factory() as db:
         result = await db.execute(select(Project).where(Project.id == project_id))
         project = result.scalar_one_or_none()

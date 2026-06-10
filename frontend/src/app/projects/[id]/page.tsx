@@ -129,10 +129,12 @@ export default function ProjectEditorPage() {
     if (!currentProject?.source_text) return;
     setGenerating(true);
     setGenerateError(null);
+    const POLL_TIMEOUT_MS = 60000;
+    const POLL_INTERVAL_MS = 1500;
+    const startTime = Date.now();
     try {
       if (shots.length > 0) {
         await api.saveVersion(projectId);
-        setShots([]);
         if (showVersions) {
           const res = await api.listVersions(projectId);
           setVersions(res.items);
@@ -140,7 +142,10 @@ export default function ProjectEditorPage() {
       }
       const { task_id } = await api.generateStoryboard(projectId, model);
       while (true) {
-        await new Promise((r) => setTimeout(r, 1500));
+        if (Date.now() - startTime > POLL_TIMEOUT_MS) {
+          throw new Error("AI 拆解超时（60s），请检查 API Key 是否有效或重试");
+        }
+        await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
         const status = await api.getTaskStatus(task_id);
         if (status.status === "completed") {
           await loadProject(projectId);
@@ -329,7 +334,16 @@ export default function ProjectEditorPage() {
               </button>
             </div>
           )}
-          {shots.length === 0 && !generating ? (
+          {generating ? (
+            <div className="flex items-center justify-center rounded-xl border py-24">
+              <div className="flex flex-col items-center gap-3">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span className="text-sm text-muted-foreground">
+                  {shots.length > 0 ? "AI 正在重新拆解脚本..." : "AI 正在拆解脚本..."}
+                </span>
+              </div>
+            </div>
+          ) : shots.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed py-24">
               <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/5">
                 <Sparkles className="h-7 w-7 text-primary/40" />
@@ -352,14 +366,6 @@ export default function ProjectEditorPage() {
               projectId={projectId}
               onUpdateShot={handleUpdateShot}
             />
-          )}
-          {generating && shots.length === 0 && (
-            <div className="flex items-center justify-center rounded-xl border py-24">
-              <div className="flex flex-col items-center gap-3">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <span className="text-sm text-muted-foreground">AI 正在拆解脚本...</span>
-              </div>
-            </div>
           )}
         </div>
       </div>

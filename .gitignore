@@ -37,3 +37,7 @@ uploads/
 # Logs
 *.log
 /tmp/
+
+# WorkBuddy
+.workbuddy/
+_backup/

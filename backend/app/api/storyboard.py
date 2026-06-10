@@ -290,6 +290,6 @@ async def reorder(
             all_shots = result.scalars().all()
             for idx, shot in enumerate(all_shots, start=1):
                 shot.shot_number = idx
-            await db.flush()
 
+    await db.commit()
     return {"message": "Reorder successful"}
