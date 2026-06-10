@@ -10,7 +10,7 @@ from sqlalchemy.orm import selectinload
 from app.core.database import get_db
 from app.models.project import Project
 from app.models.user import User
-from app.services.export_service import export_csv, export_excel, export_images_zip
+from app.services.export_service import export_csv, export_excel, export_images_zip, export_pdf
 from app.api.auth import get_current_user
 
 router = APIRouter(prefix="/api/export", tags=["export"])
@@ -72,15 +72,11 @@ async def export_pdf_endpoint(
     db: AsyncSession = Depends(get_db),
 ):
     project = await get_project_for_user(project_id, current_user.id, db)
-
-    buffer = io.BytesIO()
-    buffer.write(b"%PDF-1.4\n")
-    buffer.write(b"1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n")
-    buffer.write(b"2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n")
-    buffer.write(b"3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>\nendobj\n")
-    buffer.write(b"xref\n0 4\n0000000000 65535 f \n0000000009 00000 n \n0000000058 00000 n \n0000000115 00000 n \ntrailer\n<< /Size 4 /Root 1 0 R >>\nstartxref\n190\n%%EOF\n")
-    buffer.seek(0)
-
+    
+    if not project.shots:
+        raise HTTPException(status_code=400, detail="暂无分镜数据，无法导出PDF")
+    
+    buffer = export_pdf(project, project.shots)
     filename = f"{project.title}_分镜表.pdf"
     return StreamingResponse(
         iter([buffer.getvalue()]),

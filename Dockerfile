@@ -3,6 +3,12 @@ FROM python:3.13-slim AS backend
 
 WORKDIR /app/backend
 COPY backend/requirements.txt .
+
+# 安装中文字体支持 (wenquanyi 约 8MB)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    fonts-wqy-zenhei \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ .
 
