@@ -6,11 +6,14 @@ from fastapi.staticfiles import StaticFiles
 
 from app.api import auth, collaborators, comments, export, health, projects, storyboard, upload, versions, ws
 from app.core.config import settings
-from app.core.database import Base, engine
+from app.core.database import Base, engine, run_migrations
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # 先执行 SQLite 迁移（同步函数，添加新增列）
+    run_migrations()
+    # 再创建不存在的表
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield

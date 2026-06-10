@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Header, HTTPException
+from pathlib import Path
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -77,3 +78,69 @@ async def update_settings(
         current_user.encrypted_deepseek_key = encrypted
         await db.flush()
     return {"message": "Settings updated"}
+
+
+def _load_default_prompt(filename: str) -> str | None:
+    """Load default prompt JSON from prompts/ directory."""
+    try:
+        path = Path(__file__).parent.parent.parent / "prompts" / filename
+        with open(path, encoding="utf-8") as f:
+            import json
+            return json.load(f)
+    except Exception:
+        return None
+
+
+@router.get("/prompt-templates")
+async def get_prompt_templates(current_user: User = Depends(get_current_user)):
+    import json
+
+    result = {
+        "prompt_clean": None,
+        "prompt_storyboard": None,
+        "default_clean": _load_default_prompt("scripts_clean.json"),
+        "default_storyboard": _load_default_prompt("storyboard_split.json"),
+    }
+
+    if current_user.prompt_clean:
+        try:
+            result["prompt_clean"] = json.loads(current_user.prompt_clean)
+        except Exception:
+            pass
+    if current_user.prompt_storyboard:
+        try:
+            result["prompt_storyboard"] = json.loads(current_user.prompt_storyboard)
+        except Exception:
+            pass
+
+    return result
+
+
+@router.put("/prompt-templates")
+async def update_prompt_templates(
+    body: dict,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    import json
+
+    if "prompt_clean" in body:
+        val = body["prompt_clean"]
+        if val is not None:
+            if not isinstance(val, dict) or "system_prompt" not in val or "user_template" not in val:
+                raise HTTPException(status_code=400, detail="prompt_clean 必须是包含 system_prompt 和 user_template 的 JSON 对象")
+            current_user.prompt_clean = json.dumps(val, ensure_ascii=False)
+        else:
+            current_user.prompt_clean = None
+
+    if "prompt_storyboard" in body:
+        val = body["prompt_storyboard"]
+        if val is not None:
+            if not isinstance(val, dict) or "system_prompt" not in val or "user_template" not in val:
+                raise HTTPException(status_code=400, detail="prompt_storyboard 必须是包含 system_prompt 和 user_template 的 JSON 对象")
+            current_user.prompt_storyboard = json.dumps(val, ensure_ascii=False)
+        else:
+            current_user.prompt_storyboard = None
+
+    await db.flush()
+    return {"message": "Prompt templates updated"}

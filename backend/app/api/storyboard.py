@@ -53,6 +53,7 @@ async def generate(
         script_text=project.source_text or "",
         model=body.model,
         api_key=api_key,
+        custom_prompt_json=current_user.prompt_storyboard,
     )
     return {"task_id": task_id}
 
@@ -76,7 +77,7 @@ async def clean(
     if not api_key:
         raise HTTPException(status_code=400, detail="请在设置页配置 DeepSeek API Key 后使用智能清洗")
 
-    cleaned = clean_script(text, api_key)
+    cleaned = clean_script(text, api_key, current_user.prompt_clean)
     return {"cleaned_text": cleaned}
 
 

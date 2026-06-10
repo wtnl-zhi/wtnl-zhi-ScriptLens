@@ -112,6 +112,26 @@ export function updateSettings(data: {
   return request("PUT", "/api/auth/settings", data);
 }
 
+// ---- Prompt Templates ----
+
+export interface PromptTemplates {
+  prompt_clean: { system_prompt: string; user_template: string } | null;
+  prompt_storyboard: { system_prompt: string; user_template: string } | null;
+  default_clean: { system_prompt: string; user_template: string } | null;
+  default_storyboard: { system_prompt: string; user_template: string } | null;
+}
+
+export function getPromptTemplates(): Promise<PromptTemplates> {
+  return request("GET", "/api/auth/prompt-templates");
+}
+
+export function updatePromptTemplates(data: {
+  prompt_clean?: { system_prompt: string; user_template: string } | null;
+  prompt_storyboard?: { system_prompt: string; user_template: string } | null;
+}): Promise<{ message: string }> {
+  return request("PUT", "/api/auth/prompt-templates", data);
+}
+
 // ---- Projects ----
 
 export function listProjects(params?: {
@@ -378,6 +398,8 @@ export const api = {
   login,
   getMe,
   updateSettings,
+  getPromptTemplates,
+  updatePromptTemplates,
   listProjects,
   createProject,
   getProject,

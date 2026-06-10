@@ -30,7 +30,13 @@ def create_task(task_type: str, project_id: str, **kwargs) -> str:
         }
 
     if task_type == "generate":
-        args = (task_id, project_id, kwargs.get("script_text", ""), kwargs.get("model", "flash"), kwargs.get("api_key"))
+        args = (
+            task_id, project_id,
+            kwargs.get("script_text", ""),
+            kwargs.get("model", "flash"),
+            kwargs.get("api_key"),
+            kwargs.get("custom_prompt_json"),
+        )
         thread = threading.Thread(target=_run_generation, args=args, daemon=True)
     elif task_type == "optimize":
         args = (task_id, project_id, kwargs.get("field", "content"), kwargs.get("api_key"))
@@ -45,10 +51,10 @@ def create_task(task_type: str, project_id: str, **kwargs) -> str:
     return task_id
 
 
-def _run_generation(task_id: str, project_id: str, script_text: str, model: str, api_key: str | None) -> None:
+def _run_generation(task_id: str, project_id: str, script_text: str, model: str, api_key: str | None, custom_prompt_json: str | None = None) -> None:
     try:
         _update_task(task_id, {"progress": 10})
-        shots_data = generate_storyboard(script_text, model, api_key)
+        shots_data = generate_storyboard(script_text, model, api_key, custom_prompt_json)
         _update_task(task_id, {"progress": 60})
         asyncio.run(_save_shots(task_id, project_id, shots_data))
     except Exception as e:

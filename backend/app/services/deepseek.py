@@ -47,7 +47,13 @@ MODEL_MAP = {
 }
 
 
-def _load_clean_prompt() -> tuple[str, str]:
+def _load_clean_prompt(custom_json: str | None = None) -> tuple[str, str]:
+    if custom_json:
+        try:
+            data = json.loads(custom_json)
+            return data["system_prompt"], data["user_template"]
+        except Exception:
+            pass
     prompt_dir = Path(__file__).parent.parent.parent / "prompts"
     path = prompt_dir / "scripts_clean.json"
     with open(path, encoding="utf-8") as f:
@@ -55,11 +61,11 @@ def _load_clean_prompt() -> tuple[str, str]:
     return data["system_prompt"], data["user_template"]
 
 
-def clean_script(script_text: str, api_key: str) -> str:
+def clean_script(script_text: str, api_key: str, custom_prompt_json: str | None = None) -> str:
     """Clean raw script text using DeepSeek."""
     from openai import OpenAI
 
-    system_prompt, user_template = _load_clean_prompt()
+    system_prompt, user_template = _load_clean_prompt(custom_prompt_json)
     user_message = user_template.replace("{content}", script_text)
 
     client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com")
@@ -73,7 +79,13 @@ def clean_script(script_text: str, api_key: str) -> str:
     return (response.choices[0].message.content or script_text).strip()
 
 
-def _load_prompt() -> tuple[str, str]:
+def _load_prompt(custom_json: str | None = None) -> tuple[str, str]:
+    if custom_json:
+        try:
+            data = json.loads(custom_json)
+            return data["system_prompt"], data["user_template"]
+        except Exception:
+            pass
     prompt_dir = Path(__file__).parent.parent.parent / "prompts"
     path = prompt_dir / "storyboard_split.json"
     with open(path, encoding="utf-8") as f:
@@ -103,10 +115,10 @@ def _extract_json(text: str) -> list[dict] | None:
     return None
 
 
-def _call_deepseek(api_key: str, model: str, script_text: str) -> list[dict]:
+def _call_deepseek(api_key: str, model: str, script_text: str, custom_json: str | None = None) -> list[dict]:
     from openai import OpenAI
 
-    system_prompt, user_template = _load_prompt()
+    system_prompt, user_template = _load_prompt(custom_json)
     user_message = user_template.replace("{script_text}", script_text)
     deepseek_model = MODEL_MAP.get(model, "deepseek-chat")
 
@@ -172,6 +184,7 @@ def generate_storyboard(
     script_text: str,
     model: str = "flash",
     api_key: str | None = None,
+    custom_prompt_json: str | None = None,
 ) -> list[dict]:
     if not api_key:
         logger.info("No API key provided, generating preview from script")
@@ -180,7 +193,7 @@ def generate_storyboard(
     last_error = None
     for attempt in range(3):
         try:
-            return _call_deepseek(api_key, model, script_text)
+            return _call_deepseek(api_key, model, script_text, custom_prompt_json)
         except Exception as e:
             last_error = e
             logger.warning("DeepSeek API attempt %d/3 failed: %s", attempt + 1, e)
