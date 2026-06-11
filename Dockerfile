@@ -21,6 +21,10 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 # ===== Frontend build =====
 FROM node:20-alpine AS frontend-build
 
+# 接收构建参数，Next.js 在 build 时将 NEXT_PUBLIC_* 内联到 JS
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+
 WORKDIR /app/frontend
 COPY frontend/package.json frontend/package-lock.json* ./
 RUN npm ci
